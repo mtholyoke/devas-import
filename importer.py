@@ -66,12 +66,12 @@ class _BaseImporter(object):
 
     def _write_metadata(self, fname, meta):
         if os.path.exists(fname):
-            existing = np.load(fname)
+            existing = np.load(fname, allow_pickle=True)
             for k, v in list(meta.items()):
                 meta[k] = np.concatenate((existing[k], v))
         np.savez(fname, **meta)
 
-    def process_data(self, files, metadata, output_prefix, chunk_size=1000):
+    def process_data(self, files, metadata, output_prefix, chunk_size=500):
         print('Processing', len(files),
               'files in chunks of %d...' % chunk_size)
         total_chunks = int(np.ceil(float(len(files)) / chunk_size))

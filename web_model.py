@@ -3,6 +3,7 @@ import glob
 import h5py
 import numpy as np
 import os
+import sys
 from argparse import ArgumentParser
 from collections import defaultdict
 from numpy.lib.recfunctions import stack_arrays, append_fields, drop_fields
@@ -11,6 +12,7 @@ from sklearn.decomposition import RandomizedPCA
 from sklearn.externals.joblib import dump as jdump, load as jload
 from sklearn.linear_model import LogisticRegression
 
+sys.path.append('/home/jproctor/superman')
 from kate_masks import get_kate_mask
 from superman.baseline import ALS
 from superman.preprocess import libs_norm3
