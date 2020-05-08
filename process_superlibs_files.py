@@ -35,10 +35,14 @@ class SuperLIBSImporter(_TrajImporter):
         wave = spectra[0].copy()
         spectra[0] = spectra[1:].mean(axis=0)
 
-        all_samps, all_comps, all_projects = masterdata
+        all_samps, all_comps, all_noncomps = masterdata
         elements = sorted(all_comps.keys())
         sample = meta['Sample'].lower()
         all_samps = [samp.lower() if samp else None for samp in all_samps]
+        rock_type = ''
+        random = -1
+        matrix = ''
+        dopant = np.nan
         projects = ''
         try:
             ind = all_samps.index(sample)
@@ -47,8 +51,13 @@ class SuperLIBSImporter(_TrajImporter):
             comps = [np.nan for elem in elements]
         else:
             comps = [all_comps[elem][ind] for elem in elements]
-            if all_projects[ind]:
-              projects = all_projects[ind].upper().translate({ord(c): None for c in ' ;'})
+            rock_type = all_noncomps[0][ind]
+            random_no = all_noncomps[1][ind]
+            matrix = all_noncomps[2][ind]
+            if all_noncomps[3][ind]:
+                dopant = all_noncomps[3][ind]
+            if all_noncomps[4][ind]:
+                projects = all_noncomps[4][ind].upper().translate({ord(c): None for c in ' ;'})
 
         name = mhc_spectrum_id(fname)
         meta_tpl = dict(
@@ -57,7 +66,9 @@ class SuperLIBSImporter(_TrajImporter):
             Atmosphere=meta['Atmosphere'],
             LaserAttenuation=float(meta['LaserAttenuation']),
             DistToTarget=float(meta['DistToTarget']),
-            Date=meta['Date'], Projects=projects, Name=name)
+            Date=meta['Date'], Projects=projects, Name=name,
+            TASRockType=rock_type, RandomNumber=int(random_no),
+            Matrix=matrix, ApproxDopantConc=float(dopant))
         for e, c in zip(elements, comps):
             meta_tpl[e] = c
 

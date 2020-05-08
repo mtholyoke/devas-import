@@ -52,20 +52,31 @@ def parse_mhc_masterfile(filename):
     sheet = book.active
     elements, ecols = _get_elements(sheet)
     samples = []
+    rock_types = []
+    randoms = []
+    matrices = []
+    dopants = []
     projects = []
     compositions = defaultdict(list)
     for i, _ in enumerate(sheet.rows):
         if i < 4:
             continue
         samples.append(sheet.cell(row=i, column=1).value)
-        projects.append(sheet.cell(row=i, column=4).value)
+        rock_types.append(sheet.cell(row=i, column=2).value)
+        randoms.append(sheet.cell(row=i, column=3).value)
+        matrices.append(sheet.cell(row=i, column=4).value)
+        dopants.append(sheet.cell(row=i, column=5).value)
+        projects.append(sheet.cell(row=i, column=6).value)
         for elem, col in zip(elements, ecols):
+            if col < 7:
+                continue
             val = sheet.cell(row=i, column=col).value
             if isinstance(val, float) or isinstance(val, long):
                 compositions[elem].append(val)
             else:
                 compositions[elem].append(np.nan)
-    return samples, compositions, projects
+    noncomps = [rock_types, randoms, matrices, dopants, projects]
+    return samples, compositions, noncomps
 
 
 META_FIELDS = set(['Carousel', 'Sample', 'Target', 'Location', 'Atmosphere',

@@ -41,10 +41,14 @@ class MHCImporter(_VecImporter):
             spectra = spectra[1:]
         spectra = np.vstack((spectra.mean(0), spectra))
         shot_num = np.arange(spectra.shape[0])
-        all_samps, all_comps, all_projects = masterdata
+        all_samps, all_comps, all_noncomps = masterdata
         elements = sorted(all_comps.keys())
         sample = meta['Sample'].lower()
         all_samps = [samp.lower() if samp else None for samp in all_samps]
+        rock_type = ''
+        random = -1
+        matrix = ''
+        dopant = np.nan
         projects = ''
         try:
             ind = all_samps.index(sample)
@@ -53,19 +57,25 @@ class MHCImporter(_VecImporter):
             comps = [np.nan for elem in elements]
         else:
             comps = [all_comps[elem][ind] for elem in elements]
-            if all_projects[ind]:
-              projects = all_projects[ind].upper().translate({ord(c): None for c in ' ;'})
+            rock_type = all_noncomps[0][ind]
+            random_no = all_noncomps[1][ind]
+            matrix = all_noncomps[2][ind]
+            if all_noncomps[3][ind]:
+                dopant = all_noncomps[3][ind]
+            if all_noncomps[4][ind]:
+                projects = all_noncomps[4][ind].upper().translate({ord(c): None for c in ' ;'})
         name = self._get_id(fname)
         metas = np.broadcast_arrays(shot_num, int(meta['Carousel']),
                                     meta['Sample'], int(meta['Target']),
                                     int(meta['Location']), meta['Atmosphere'],
                                     float(meta['LaserAttenuation']),
-                                    float(meta['DistToTarget']),
-                                    meta['Date'], projects,
-                                    name, *comps)
+                                    float(meta['DistToTarget']), meta['Date'],
+                                    projects, name, rock_type, int(random_no),
+                                    matrix, float(dopant), *comps)
         meta_fields = [
             'Number', 'Carousel', 'Sample', 'Target', 'Location', 'Atmosphere',
             'LaserAttenuation', 'DistToTarget', 'Date', 'Projects', 'Name',
+            'TASRockType', 'RandomNumber', 'Matrix', 'ApproxDopantConc'
         ] + elements
         return spectra, dict(zip(meta_fields, metas))
 
