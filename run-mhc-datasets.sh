@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 
+echo "Running all MHC datasets"
+
 DATA_ROOT=/mars/g/rch3/r/mdyar
 TODAY=$(date "+%Y-%m-%d")
 NEMO_ROOT=cj@nemo.mtholyoke.edu:/home/cj/datafiles
 SCRIPT_ROOT=/home/jproctor/msl_import
 
+echo "Starting Mossbauer"
 MOSS_DIR=$DATA_ROOT/data_Moss
 MOSS_LOG=$MOSS_DIR/nightly-logs/mossbauer-$TODAY.log
 MOSS_REMOTE=www-data@mossbauer.mtholyoke.edu:/var/www/mossbauer.mtholyoke.edu/data_Moss
@@ -15,7 +18,9 @@ rsync -av $MOSS_DIR/to-DEVAS/ $NEMO_ROOT/Mossbauer/MHC/ >> $MOSS_LOG 2>&1
 echo "### $(date) - finished rsync to nemo, starting rsync to mossbauer" >> $MOSS_LOG
 rsync -av $MOSS_DIR/data/ $MOSS_REMOTE/data/ >> $MOSS_LOG 2>&1
 echo "### $(date) - finished rsync to mossbauer" >> $MOSS_LOG
+echo "Finished Mossbauer"
 
+echo "Starting Raman"
 RAMAN_DIR=$DATA_ROOT/data_raman
 RAMAN_LOG=$RAMAN_DIR/nightly-logs/raman-$TODAY.log
 echo "### $(date) - starting processing" > $RAMAN_LOG
@@ -23,7 +28,10 @@ python2.7 $SCRIPT_ROOT/process_raman_files.py -i $RAMAN_DIR/spectra -o $RAMAN_DI
 echo "### $(date) - finished processing, starting rsync" >> $RAMAN_LOG
 rsync -av $RAMAN_DIR/to-DEVAS/ $NEMO_ROOT/Raman/MHC/ >> $RAMAN_LOG 2>&1
 echo "### $(date) - finished rsync" >> $RAMAN_LOG
+echo "Finished Raman"
 
+echo "Skipping ChemLIBS"
+# echo "Starting ChemLIBS"
 CHEMLIBS_DIR=$DATA_ROOT/MHC.LIBS/DATA
 CHEMLIBS_LOG=$CHEMLIBS_DIR/nightly-logs/chemlibs-$TODAY.log
 # echo "### $(date) - starting processing" > $CHEMLIBS_LOG
@@ -31,7 +39,10 @@ CHEMLIBS_LOG=$CHEMLIBS_DIR/nightly-logs/chemlibs-$TODAY.log
 # echo "### $(date) - finished processing, starting rsync" >> $CHEMLIBS_LOG
 # rsync -av $CHEMLIBS_DIR/to-DEVAS/ $NEMO_ROOT/LIBS/MHC/ >> $CHEMLIBS_LOG 2>&1
 # echo "### $(date) - finished rsync" >> $CHEMLIBS_LOG
+# echo "Finished ChemLIBS"
 
+echo "Skipping SuperLIBS 5150"
+# echo "Starting SuperLIBS 5150"
 SUPERLIBS_DIR=$DATA_ROOT/MHC.SUPERLIBS/SAMPLE\ RUNS
 SUPERLIBS_LOG=$SUPERLIBS_DIR/nightly-logs/MHC_5120-$TODAY.log
 # echo "### $(date) - starting processing" > $SUPERLIBS_LOG
@@ -39,3 +50,10 @@ SUPERLIBS_LOG=$SUPERLIBS_DIR/nightly-logs/MHC_5120-$TODAY.log
 # echo "### $(date) - finished processing, starting rsync" >> $SUPERLIBS_LOG
 # rsync -av $SUPERLIBS_DIR/to-DEVAS/MHC_5120/ $NEMO_ROOT/SuperLIBS/MHC_5120/ >> $SUPERLIBS_LOG 2>&1
 # echo "### $(date) - finished rsync" >> $SUPERLIBS_LOG
+# echo "Finished SuperLIBS 5150"
+
+echo "Skipping server refresh"
+# echo "Starting server refresh"
+# echo "$(wget -O- --method=POST http://nemo.p/nightly-refresh 2>&1)"
+
+echo "Finished running all MHC datasets"
