@@ -2,7 +2,7 @@
 set -e
 
 # User settings
-REMOTE_PREPROCESSED=http://pds-geosciences.wustl.edu/msl/msl-m-chemcam-libs-4_5-rdr-v1/mslccm_1xxx/
+REMOTE_PREPROCESSED=https://pds-geosciences.wustl.edu/msl/msl-m-chemcam-libs-4_5-rdr-v1/mslccm_1xxx/
 MASTER_FILE=msl_ccam_obs.csv
 
 MSL_DIR=/mars/g/rch3/r/mdyar/jproctor-test/MSL_PDS
