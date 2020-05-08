@@ -55,7 +55,7 @@ def parse_mhc_masterfile(filename):
     projects = []
     compositions = defaultdict(list)
     for i, _ in enumerate(sheet.rows):
-        if i < 5:
+        if i < 4:
             continue
         samples.append(sheet.cell(row=i, column=1).value)
         projects.append(sheet.cell(row=i, column=4).value)
@@ -100,4 +100,3 @@ def process_mhc_spectra(fname, n_chans=None):
         print('Expected', n_chans, 'but got', data.shape[0])
         return
     return data.T, meta, prepro
-
