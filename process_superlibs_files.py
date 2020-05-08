@@ -61,6 +61,10 @@ class SuperLIBSImporter(_TrajImporter):
         for e, c in zip(elements, comps):
             meta_tpl[e] = c
 
+        # Copied from superman-web/backend/web_datasets.py
+        chan_ranges = (288., 288.5, 633., 635.5)
+        den_lo, den_hi, num_lo, num_hi = np.searchsorted(wave, chan_ranges)
+
         trajs = []
         metas = []
         for shot_number, y in enumerate(spectra):
@@ -68,6 +72,25 @@ class SuperLIBSImporter(_TrajImporter):
             meta = meta_tpl.copy()
             meta['Number'] = shot_number
             meta['pkey'] = '%s:%02d' % (name, shot_number)
+
+            # Adapted from superman-web/backend/web_datasets.py to
+            # compute the Si ratio as a proxy for temperature:
+            try:
+                num_list = y[num_lo:num_hi]
+                den_list = y[den_lo:den_hi]
+                if not num_list.size or not den_list.size:
+                    si_ratio = np.nan
+                    print("WARNING: can't calculate Si ratio in file:", fname, 'shot:', shot_number)
+                else:
+                    si_ratio = max(0, num_list.max() / den_list.max())
+                meta['Si ratio'] = si_ratio
+            except Exception as e:
+                print('ERROR calculating Si ratio in file:', fname, 'shot:', shot_number)
+                print('  Numerator [', num_lo, ':', num_hi, ']:', y[num_lo:num_hi])
+                print('  Denominator [', den_lo, ':', den_hi, ']:', y[den_lo:den_hi])
+                print('  Exception:', str(e))
+                raise
+
             metas.append(meta)
         return trajs, metas
 
