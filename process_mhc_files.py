@@ -46,7 +46,7 @@ class MHCImporter(_VecImporter):
         sample = meta['Sample'].lower()
         all_samps = [samp.lower() if samp else None for samp in all_samps]
         rock_type = ''
-        random = -1
+        random_no = -1
         matrix = ''
         dopant = np.nan
         projects = ''
