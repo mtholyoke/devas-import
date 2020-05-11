@@ -10,7 +10,7 @@ from importer import _VecImporter
 
 class MossbauerImporter(_VecImporter):
     driver = None
-    file_ext = '.cnt'
+    file_ext = '.txt'
     pkey_field = 'Sample #'
     n_chans = 512
     superman_fields = set(['Sample #', 'T(K)', 'Sample Name', 'Post?',
@@ -27,7 +27,7 @@ class MossbauerImporter(_VecImporter):
         for row in sheet.iter_rows(min_row=1, max_row=1):
             headers = [cell.value for cell in row]
         meta = defaultdict(list)
-        id_ind = headers==self.pkey_field
+        id_ind = headers == self.pkey_field
         for i, row in enumerate(sheet.rows):
             if i < 1 or row[id_ind].value is None:
                 continue
@@ -45,17 +45,19 @@ class MossbauerImporter(_VecImporter):
             return
         meta_idx = meta_idx[0]
         if metadata['Post?'][meta_idx] is None or \
-           metadata['Post?'][meta_idx].upper()!='Y':
+            metadata['Post?'][meta_idx].upper()!='Y':
             return
-        meta = {key: val[meta_idx] for key, val in metadata.items()}        
+        meta = {key: val[meta_idx] for key, val in metadata.items()}
         spectrum = []
-        for line in open(fname):
-            line = line.strip()
-            try:
-                spectrum.append(int(line))
-            except ValueError:
-                pass
-        if len(spectrum)!=self.n_chans:
+        with open(fname) as f:
+            for line in itertools.islice(f, 10, None):
+                line = line.strip()
+                try:
+                    row = np.asarray(map(float, line.split()), dtype=float)
+                    spectrum.append(row)
+                except ValueError:
+                    pass
+        if len(spectrum) != self.n_chans:
             return
         return np.array(spectrum, dtype=float), meta
 
