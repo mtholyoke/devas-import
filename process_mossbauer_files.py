@@ -1,14 +1,15 @@
 from __future__ import print_function
 import numpy as np
+import itertools
 from collections import defaultdict
 from openpyxl import load_workbook
 from os.path import basename
 from time import time
 
-from importer import _VecImporter
+from importer import _TrajImporter
 
 
-class MossbauerImporter(_VecImporter):
+class MossbauerImporter(_TrajImporter):
     driver = None
     file_ext = '.txt'
     pkey_field = 'Sample #'
@@ -33,6 +34,8 @@ class MossbauerImporter(_VecImporter):
                 continue
             for header, cell in zip(headers, row):
                 if header in self.superman_fields:
+                    if header == 'Dana Group' and not cell.value:
+                        cell.value = 'n/a'
                     meta[header].append(cell.value)
         print('  done. %.2fs' % (time() - start))
         return meta
@@ -53,8 +56,11 @@ class MossbauerImporter(_VecImporter):
             for line in itertools.islice(f, 10, None):
                 line = line.strip()
                 try:
-                    row = np.asarray(map(float, line.split()), dtype=float)
-                    spectrum.append(row)
+                    row = map(float, line.split())
+                    if len(row) != 2:
+                        print('  Wrong data format in file', fname)
+                        return
+                    spectrum.append(np.asarray(row, dtype=float))
                 except ValueError:
                     pass
         if len(spectrum) != self.n_chans:
