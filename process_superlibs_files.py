@@ -91,7 +91,8 @@ class SuperLIBSImporter(_TrajImporter):
                 den_list = y[den_lo:den_hi]
                 if not num_list.size or not den_list.size:
                     si_ratio = np.nan
-                    print("WARNING: can't calculate Si Ratio in file:", fname, 'shot:', shot_number)
+                    if shot_number == 0:
+                        print("WARNING: can't calculate Si Ratio in file:", fname)
                 else:
                     si_ratio = max(0, num_list.max() / den_list.max())
                 meta['Si Ratio'] = si_ratio
