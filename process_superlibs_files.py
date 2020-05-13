@@ -48,7 +48,7 @@ class SuperLIBSImporter(_TrajImporter):
             ind = all_samps.index(sample)
         except Exception as e:
             print('Failed to get compositions for', fname, ': ', e)
-            comps = [np.nan for elem in elements]
+            return
         else:
             comps = [all_comps[elem][ind] for elem in elements]
             rock_type = all_noncomps[0][ind]
@@ -85,18 +85,18 @@ class SuperLIBSImporter(_TrajImporter):
             meta['pkey'] = '%s:%02d' % (name, shot_number)
 
             # Adapted from superman-web/backend/web_datasets.py to
-            # compute the Si ratio as a proxy for temperature:
+            # compute the Si Ratio as a proxy for temperature:
             try:
                 num_list = y[num_lo:num_hi]
                 den_list = y[den_lo:den_hi]
                 if not num_list.size or not den_list.size:
                     si_ratio = np.nan
-                    print("WARNING: can't calculate Si ratio in file:", fname, 'shot:', shot_number)
+                    print("WARNING: can't calculate Si Ratio in file:", fname, 'shot:', shot_number)
                 else:
                     si_ratio = max(0, num_list.max() / den_list.max())
-                meta['Si ratio'] = si_ratio
+                meta['Si Ratio'] = si_ratio
             except Exception as e:
-                print('ERROR calculating Si ratio in file:', fname, 'shot:', shot_number)
+                print('ERROR calculating Si Ratio in file:', fname, 'shot:', shot_number)
                 print('  Numerator [', num_lo, ':', num_hi, ']:', y[num_lo:num_hi])
                 print('  Denominator [', den_lo, ':', den_hi, ']:', y[den_lo:den_hi])
                 print('  Exception:', str(e))

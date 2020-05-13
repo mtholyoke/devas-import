@@ -55,7 +55,6 @@ class MHCImporter(_VecImporter):
         except Exception as e:
             print('Failed to get compositions for', fname, ': ', e)
             return
-            # comps = [np.nan for elem in elements]
         else:
             comps = [all_comps[elem][ind] for elem in elements]
             rock_type = all_noncomps[0][ind]

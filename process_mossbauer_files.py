@@ -58,8 +58,8 @@ class MossbauerImporter(_TrajImporter):
                 try:
                     row = map(float, line.split())
                     if len(row) != 2:
-                        print('  Wrong data format in file', fname)
-                        return
+                      print('  Wrong data format in file', fname)
+                      return
                     spectrum.append(np.asarray(row, dtype=float))
                 except ValueError:
                     pass
