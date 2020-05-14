@@ -10,7 +10,11 @@ Currently the processing scripts only run in Python 2.7. You’ll need to negoti
 
 The `mirror_pds.sh` driver script currently uses the [`lftp` utility](https://lftp.yar.ru/).
 
-**TODO:** Upgrade to Python 3.8, remove the need for `lftp`, and document the versions better.
+The `web_model.py` script requires the [Superman](https://github.com/all-umass/superman) library
+
+**TODO:** Upgrade the code to run in Python 3.8, remove the need for `lftp`, and document the versions better.
+
+**TODO:** Current server needs an upgrade; don’t forget to fix directory names for new permanent home.
 
 ## Active Contents
 
