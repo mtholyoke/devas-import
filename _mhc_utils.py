@@ -92,6 +92,15 @@ def process_mhc_spectra(fname, n_chans=None):
         if line and ':' in line[0]:
             field = line[0].split(':')[0]
             val = line[0].split(':')[1].strip()
+            if field == 'Carousels':
+                field = 'Carousel'
+                val = val.split(' ')[0].strip()
+            if field == 'Dates':
+                field = 'Date'
+                val = val.split(' ')[0].strip()
+            if field == 'Locations':
+                field = 'Location'
+                val = val.split(' ')[0].strip()
             if field in META_FIELDS:
                 meta[field] = val
         elif all(_is_float(item) for item in line):
