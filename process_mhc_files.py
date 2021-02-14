@@ -3,6 +3,7 @@ from collections import defaultdict
 from csv import reader
 from glob import glob
 from openpyxl import load_workbook
+from time import time
 import numpy as np
 import os
 
@@ -33,6 +34,7 @@ class MHCImporter(_VecImporter):
         return parse_mhc_masterfile(filename)
 
     def _process_spectra(self, fname, masterdata):
+        print('{:0.1f} process_mhc_spectra'.format(time()))
         result = process_mhc_spectra(fname, n_chans=self.n_chans)
         if not result:
             return
@@ -41,6 +43,7 @@ class MHCImporter(_VecImporter):
             spectra = spectra[1:]
         spectra = np.vstack((spectra.mean(0), spectra))
         shot_num = np.arange(spectra.shape[0])
+        print('{:0.1f} prepare metadata'.format(time()))
         all_samps, all_comps, all_noncomps = masterdata
         elements = sorted(all_comps.keys())
         sample = meta['Sample'].lower()
@@ -50,6 +53,7 @@ class MHCImporter(_VecImporter):
         matrix = ''
         dopant = np.nan
         projects = ''
+        print('{:0.1f} get comps'.format(time()))
         try:
             ind = all_samps.index(sample)
         except Exception as e:
@@ -65,6 +69,7 @@ class MHCImporter(_VecImporter):
             if all_noncomps[4][ind]:
                 projects = all_noncomps[4][ind].upper().translate({ord(c): None for c in ' ;'})
         name = self._get_id(fname)
+        print('{:0.1f} broadcast'.format(time()))
         metas = np.broadcast_arrays(shot_num, int(meta['Carousel']),
                                     meta['Sample'], int(meta['Target']),
                                     int(meta['Location']), meta['Atmosphere'],

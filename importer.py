@@ -88,6 +88,7 @@ class _BaseImporter(object):
 
     def _chunk_main(self, filelist, metadata, output_prefix):
         all_spectra, all_meta = [], []
+        print('{:0.1f} for f in filelist'.format(time()))
         for f in filelist:
             ret = self._process_spectra(f, metadata)
             if ret is None or ret[0] is None or ret[1] is None:
@@ -116,6 +117,7 @@ class _BaseImporter(object):
             all_meta = dict((k, np.array([m[k] for m in all_meta]))
                             for k in all_meta[0].keys())
         output_suffix = '.hdf5' if self.driver is None else '.%03d.hdf5'
+        print('{:0.1f} write_data'.format(time()))
         if issubclass(type(self), _VecImporter):
             self._write_data(output_prefix + output_suffix,
                              np.vstack(all_spectra),
@@ -127,6 +129,7 @@ class _BaseImporter(object):
         else:
             print('Unknown class, cannot write file.')
             return
+        print('{:0.1f} write_metadata'.format(time()))
         self._write_metadata(output_prefix + '_meta.npz', all_meta)
 
 
