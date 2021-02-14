@@ -17,6 +17,7 @@ echo "### $(date) - finished processing, starting rsync to nemo" >> $MOSS_LOG
 rsync -av $MOSS_DIR/to-DEVAS/ $NEMO_ROOT/Mossbauer/MHC/ >> $MOSS_LOG 2>&1
 echo "### $(date) - finished rsync to nemo, starting rsync to mossbauer" >> $MOSS_LOG
 rsync -av $MOSS_DIR/data/ $MOSS_REMOTE/data/ >> $MOSS_LOG 2>&1
+rsync -av $MOSS_DIR/mlogbook.xlsx $MOSS_REMOTE/mlogbook.xlsx >> $MOSS_LOG 2>&1
 echo "### $(date) - finished rsync to mossbauer" >> $MOSS_LOG
 echo "Finished Mossbauer"
 
@@ -48,7 +49,7 @@ python2.7 $SCRIPT_ROOT/process_superlibs_files.py -i $SUPERLIBS_DIR/PREPROCESSED
 echo "### $(date) - finished processing, starting rsync" >> $SUPERLIBS_LOG
 rsync -av $SUPERLIBS_DIR/to-DEVAS/MHC_5120/ $NEMO_ROOT/SuperLIBS/MHC_5120/ >> $SUPERLIBS_LOG 2>&1
 echo "### $(date) - finished rsync" >> $SUPERLIBS_LOG
-echo "Finished SuperLIBS 5150"
+echo "Finished SuperLIBS 5120"
 
 echo "Server refresh:"
 echo "$(wget -O- --method=POST http://nemo.p/nightly-refresh 2>&1)"
