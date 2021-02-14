@@ -12,10 +12,6 @@ CCS_ORIGINALS=$CCS_DATA_DIR/original
 MODELS_PREDS_DIR=$MSL_DIR/models_predictions
 MOC_DIR=$MODELS_PREDS_DIR/moc
 
-LIBS_DATA_DIR=/mars/g/rch3/r/mdyar/jproctor-test/LIBS
-LIBS_MIX_FILE=$LIBS_DATA_DIR/mhc_doping+mhc_big+lanl_400+public_caltargets.npz
-LANL_FILE=$LIBS_DATA_DIR/lanl_new.hdf5
-
 # Download Masterfile, processed spectra, & MOC predictions
 starttime=$(date +%s)
 echo "$starttime: Starting MSL data downloads..."
@@ -27,11 +23,16 @@ EOF
 endtime=$(date +%s)
 echo "$endtime: Download finished after $((endtime - starttime)) seconds."
 
-# # Add the new CCS files to the server-readable data
-# python2.7 process_msl_files.py -o $CCS_PREFIX -i $CCS_ORIGINALS -m $CCS_DATA_DIR/$MASTER_FILE
-# echo "$(date +%s): Added new CCS files to ${CCS_PREFIX}.xxx.hdf5"
-#
+# Add the new CCS files to the server-readable data
+python2.7 process_msl_files.py -o $CCS_PREFIX -i $CCS_ORIGINALS -m $CCS_DATA_DIR/$MASTER_FILE
+echo "$(date +%s): Added new CCS files to ${CCS_PREFIX}.xxx.hdf5"
+
 # # Predict the new shots
+#
+# LIBS_DATA_DIR=/mars/g/rch3/r/mdyar/jproctor-test/LIBS
+# LIBS_MIX_FILE=$LIBS_DATA_DIR/mhc_doping+mhc_big+lanl_400+public_caltargets.npz
+# LANL_FILE=$LIBS_DATA_DIR/lanl_new.hdf5
+#
 # python2.7 web_model.py -o $MODELS_PREDS_DIR --ccs-dir $CCS_DATA_DIR --model standard --lanl-file $LANL_FILE
 # echo "$(date +%s): Predicted compositions for new CCS files"
 #
