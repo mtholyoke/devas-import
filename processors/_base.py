@@ -2,8 +2,9 @@
 
 # import h5py
 import logging
-# import numpy as np
+import numpy as np
 import os
+from time import time
 
 
 class _BaseProcessor(object):
@@ -21,7 +22,7 @@ class _BaseProcessor(object):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
-        required = [ 'metadata' ]
+        required = ['metadata']
         for attr in required:
             if not hasattr(self, attr):
                 raise AttributeError(f'Attribute "{attr}" is required')
@@ -36,7 +37,7 @@ class _BaseProcessor(object):
                 setattr(self, key, value)
 
     def main(self):
-        self.logger.debug(f'Entering {type(self).__name__}.main() for {self.name}')
+        self.logger.debug(f'Starting processing for {self.name}')
         self.construct_paths()
         processed_ids = set(self.get_processed_ids())
         self.logger.info(f'Found {len(processed_ids)} existing IDs')
@@ -50,7 +51,7 @@ class _BaseProcessor(object):
             self.logger.info('No new IDs, nothing to do')
             return
         metadata = self._parse_metadata()
-        # self.process_data(to_process, metadata)
+        self.process_all(to_process, metadata)
 
     def construct_paths(self):
         root = getattr(self, 'root_dir', '')
@@ -95,36 +96,63 @@ class _BaseProcessor(object):
         meta = np.load(filepath)
         return meta[self.pkey_field]
 
+    def process_all(self, to_process, metadata, chunk_size=500):
+        self.logger.info('Processing %d files in chunks of %d',
+                         len(to_process), chunk_size)
+        total_chunks = int(np.ceil(float(len(to_process)) / chunk_size))
+        trajectory = issubclass(type(self), _TrajectoryProcessor)
+        toc = time()
+        for i, c in enumerate(range(0, len(to_process), chunk_size), start=1):
+            self.logger.info(f'Starting chunk {i} of {total_chunks}')
+            filepaths = [x[1] for x in to_process[c:c + chunk_size]]
+            self.process_chunk(filepaths, metadata, trajectory)
+            tic = time()
+            self.logger.debug(f'Chunk {i} completed in {tic - toc} seconds')
+            toc = tic
+        return
 
-    def old__main(self):
-        # ap = ArgumentParser()
-        # ap.add_argument('-i', '--input-dir', type=str, nargs='+',
-        #                 help='Path to directories containing input data.')
-        # ap.add_argument('-o', '--output-prefix', type=str, required=True,
-        #                 help='Path to directory containing output data.')
-        # ap.add_argument('-m', '--master', required=True,
-        #                 help='Path to the master metadata file.')
-        # ap.add_argument('-m2', '--master2', required=False,
-        #                 help='Path to an auxiliary master metadata file.')
-        # args = ap.parse_args()
-        # processed_ids = set(self.get_processed_ids(args.output_prefix))
-        # print('Found', len(processed_ids), 'existing IDs')
-        # dir_ids, dir_files = self.get_directory_data(*args.input_dir)
-        # print('Found', len(dir_ids), 'IDs in the input dir')
-        # new_files = []
-        # new_IDs = set()
-        # for ID, fname in zip(dir_ids, dir_files):
-        #     if ID not in processed_ids and ID not in new_IDs:
-        #         new_files.append(fname)
-        #         new_IDs.add(ID)
-        # if not new_files:
-        #     print('No new files, nothing to do.')
-        #     return
-        # if args.master2:
-        #     metadata = self.parse_masterfile(args.master, args.master2)
+    def process_chunk(self, filepaths, metadata, trajectory=False):
+        all_spectra, all_meta = [], []
+        for f in filepaths:
+            spectra, meta = self.process_file(f, metadata)
+            if spectra is None or meta is None:
+                continue
+            if trajectory and isinstance(spectra, list):
+                all_spectra.extend(spectra)
+                all_meta.extend(meta)
+            else:
+                all_spectra.append(spectra)
+                all_meta.append(meta)
+        if not all_spectra:
+            self.logger.error('No spectra found in chunk')
+            return
+        # if isinstance(all_meta[0][self.pkey_field], (list, np.ndarray)):
+        #     all_meta = dict((k, np.concatenate([m[k] for m in all_meta]))
+        #                     for k in all_meta[0].keys())
         # else:
-        #     metadata = self.parse_masterfile(args.master)
-        self.process_data(new_files, metadata, args.output_prefix)
+        #     all_meta = dict((k, np.array([m[k] for m in all_meta]))
+        #                     for k in all_meta[0].keys())
+        # output_suffix = '.hdf5' if self.driver is None else '.%03d.hdf5'
+        # if issubclass(type(self), _VecImporter):
+        #     self._write_data(output_prefix + output_suffix,
+        #                      np.vstack(all_spectra),
+        #                      self.n_chans)
+        # elif issubclass(type(self), _TrajImporter):
+        #     self._write_data(output_prefix + output_suffix,
+        #                      all_spectra,
+        #                      all_meta[self.pkey_field])
+        # else:
+        #     print('Unknown class, cannot write file.')
+        #     return
+        # self._write_metadata(output_prefix + '_meta.npz', all_meta)
+
+    # This is extended by _VectorProcessor.
+    def process_file(self, filepath, metadata):
+        processed = self._process_spectra(filepath, metadata)
+        if processed is None or processed[0] is None or processed[1] is None:
+            self.logger.warn(f'Problem processing {filepath}')
+            return None, None
+        return processed
 
     # def _write_metadata(self, fname, meta):
     #     if os.path.exists(fname):
@@ -133,63 +161,49 @@ class _BaseProcessor(object):
     #             meta[k] = np.concatenate((existing[k], v))
     #     np.savez(fname, **meta)
     #
-    # def process_data(self, files, metadata, output_prefix, chunk_size=500):
-    #     print('Processing', len(files),
-    #           'files in chunks of %d...' % chunk_size)
-    #     total_chunks = int(np.ceil(float(len(files)) / chunk_size))
-    #     toc = time()
-    #     for i, chunk_idx in enumerate(xrange(0, len(files), chunk_size),
-    #                                   start=1):
-    #         print('chunk', i, 'of', total_chunks)
-    #         flist = files[chunk_idx:chunk_idx+chunk_size]
-    #         self._chunk_main(flist, metadata, output_prefix)
-    #         tic = time()
-    #         print('  took', tic - toc, 'seconds')
-    #         toc = tic
-    #     return
-    #
-    # def _chunk_main(self, filelist, metadata, output_prefix):
-    #     all_spectra, all_meta = [], []
-    #     for f in filelist:
-    #         ret = self._process_spectra(f, metadata)
-    #         if ret is None or ret[0] is None or ret[1] is None:
-    #             # Something failed in the processing function
-    #             continue
-    #         spectra, meta = ret
-    #         if issubclass(type(self), _VecImporter):
-    #             pkeys = meta[self.pkey_field]
-    #             n_meta = len(pkeys) if isinstance(pkeys,(list, np.ndarray)) else 1
-    #             n_spectra = 1 if spectra.ndim == 1 else spectra.shape[0]
-    #             if n_spectra != n_meta:
-    #                 print('Mismatching # of shots:', os.path.basename(f))
-    #                 continue
-    #         if issubclass(type(self), _TrajImporter) and isinstance(spectra, list):
-    #             all_spectra.extend(spectra)
-    #             all_meta.extend(meta)
-    #         else:
-    #             all_spectra.append(spectra)
-    #             all_meta.append(meta)
-    #     if not all_spectra:
-    #         return
-    #     if isinstance(all_meta[0][self.pkey_field], (list, np.ndarray)):
-    #         all_meta = dict((k, np.concatenate([m[k] for m in all_meta]))
-    #                         for k in all_meta[0].keys())
-    #     else:
-    #         all_meta = dict((k, np.array([m[k] for m in all_meta]))
-    #                         for k in all_meta[0].keys())
-    #     output_suffix = '.hdf5' if self.driver is None else '.%03d.hdf5'
-    #     if issubclass(type(self), _VecImporter):
-    #         self._write_data(output_prefix + output_suffix,
-    #                          np.vstack(all_spectra),
-    #                          self.n_chans)
-    #     elif issubclass(type(self), _TrajImporter):
-    #         self._write_data(output_prefix + output_suffix,
-    #                          all_spectra,
-    #                          all_meta[self.pkey_field])
-    #     else:
-    #         print('Unknown class, cannot write file.')
-    #         return
-    #     self._write_metadata(output_prefix + '_meta.npz', all_meta)
+
+    def _chunk_main(self, filelist, metadata, output_prefix):
+        # all_spectra, all_meta = [], []
+        # for f in filelist:
+        #     ret = self._process_spectra(f, metadata)
+        #     if ret is None or ret[0] is None or ret[1] is None:
+        #         # Something failed in the processing function
+        #         continue
+        #     spectra, meta = ret
+        #     if issubclass(type(self), _VecImporter):
+        #         pkeys = meta[self.pkey_field]
+        #         n_meta = len(pkeys) if isinstance(pkeys,(list, np.ndarray)) else 1
+        #         n_spectra = 1 if spectra.ndim == 1 else spectra.shape[0]
+        #         if n_spectra != n_meta:
+        #             print('Mismatching # of shots:', os.path.basename(f))
+        #             continue
+        #     if issubclass(type(self), _TrajImporter) and isinstance(spectra, list):
+        #         all_spectra.extend(spectra)
+        #         all_meta.extend(meta)
+        #     else:
+        #         all_spectra.append(spectra)
+        #         all_meta.append(meta)
+        # if not all_spectra:
+        #     return
+        if isinstance(all_meta[0][self.pkey_field], (list, np.ndarray)):
+            all_meta = dict((k, np.concatenate([m[k] for m in all_meta]))
+                            for k in all_meta[0].keys())
+        else:
+            all_meta = dict((k, np.array([m[k] for m in all_meta]))
+                            for k in all_meta[0].keys())
+        output_suffix = '.hdf5' if self.driver is None else '.%03d.hdf5'
+        if issubclass(type(self), _VecImporter):
+            self._write_data(output_prefix + output_suffix,
+                             np.vstack(all_spectra),
+                             self.n_chans)
+        elif issubclass(type(self), _TrajImporter):
+            self._write_data(output_prefix + output_suffix,
+                             all_spectra,
+                             all_meta[self.pkey_field])
+        else:
+            print('Unknown class, cannot write file.')
+            return
+        self._write_metadata(output_prefix + '_meta.npz', all_meta)
 
 
 class _VectorProcessor(_BaseProcessor):
@@ -197,6 +211,18 @@ class _VectorProcessor(_BaseProcessor):
     Abstract base class. Requires implementations of these members:
     - n_chans e.g., 6144
     '''
+    def process_file(self, filepath, metadata):
+        spectra, meta = super().process_file(filepath, metadata)
+        if spectra is None or meta is None:
+            return None, None
+        pkeys = meta[self.pkey_field]
+        n_meta = len(pkeys) if isinstance(pkeys, (list, np.ndarray)) else 1
+        n_spectra = 1 if spectra.ndim == 1 else spectra.shape[0]
+        if n_spectra != n_meta:
+            self.logger.warn(f'Unexpected number of shots in {filepath}')
+            return None, None
+        return spectra, meta
+
     def _write_data(self, fpattern, spectra, n_chans):
         # fh = h5py.File(fpattern, driver=self.driver, libver='latest')
         # if '/spectra' in fh:

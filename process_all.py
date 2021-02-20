@@ -19,7 +19,7 @@ def logging_setup(log_cfg):
         log_cfg = {}
     for key, value in defaults.items():
         if key not in log_cfg:
-            log_cfg[key] = value;
+            log_cfg[key] = value
     if 'filename' in log_cfg and log_cfg['filename']:
         del log_cfg['stream']
     if isinstance(log_cfg['level'], str):

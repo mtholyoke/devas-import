@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import numpy as np
 import openpyxl
 import os
 from collections import defaultdict
 from glob import glob
+
 
 # Scan the data directory for *_spect.csv files.
 # Note: this requires the files be in 1 level of subdirectory.
@@ -11,6 +13,7 @@ def find_spectrum_files(input_dir, file_ext):
     fpattern = os.path.join(input_dir, '*', f'*{file_ext}')
     return [f for f in glob(fpattern)
             if '_TI_' not in f.upper() and '_DARK_' not in f.upper()]
+
 
 def get_element_columns(sheet):
     elem_cols = []
@@ -24,12 +27,14 @@ def get_element_columns(sheet):
         elem_cols.append(('e_' + name, col))
     return elem_cols
 
+
 # Truncates "_spect.csv" from the filename to get the ID.
 def get_spectrum_id(filename):
     name, _ = os.path.splitext(os.path.basename(filename))
     if not name.endswith('_spect') or len(name) < 7:
         return None
     return name[:-6]
+
 
 def parse_millennium_comps(filepath):
     book = openpyxl.load_workbook(filepath, data_only=True)
@@ -55,7 +60,7 @@ def parse_millennium_comps(filepath):
             if col < 7:
                 continue
             val = sheet.cell(row=i, column=col).value
-            if isinstance(val, float) or isinstance(val, long):
+            if isinstance(val, float) or isinstance(val, int):
                 compositions[elem].append(val)
             else:
                 compositions[elem].append(np.nan)
