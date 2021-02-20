@@ -1,0 +1,14 @@
+name: devas-import
+services:
+  appserver:
+    type: python
+    build_as_root:
+      - pip install --upgrade pip
+      - pip install h5py==3.1.0 numpy==1.20.1 openpyxl==3.0.6 pyyaml==5.4.1
+tooling:
+  process:
+    service: appserver
+    cmd: /app/process_all.py
+  python:
+    service: appserver
+    cmd: /usr/local/bin/python

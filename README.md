@@ -4,17 +4,40 @@ Scripts for aggregating and preprocessing data for [Superman](https://github.com
 
 The code here was adapted from original work by [@perimosocordiae](https://github.com/perimosocordiae).
 
+
 ## Requirements
 
-Currently the processing scripts only run in Python 2.7. You’ll need to negotiate mutually compatible versions of h5py, openpyxl, and numpy.
+For the development environment, you can either install the packages below or run a reasonably current version of [Lando](https://lando.dev/) (this was developed in Lando version 3.0.14 in 2021) for the development environment.
 
-> The current server was built in Debian 8. I believe we used `apt` to install `python-h5py` and `python-numpy`, but `pip` to install `openpyxl`. The server was then upgraded to Debian 9, and reports these versions: `python-h5py 2.7.0-1`, `python-numpy 1:1.12.1-3`, `openpyxl 2.6.4`.
+The code was developed in Python 3.7.8 with these packages:
+- `h5py` 3.1.0
+- `numpy` 1.20.1
+- `openpyxl` 3.0.6
+- `pyyaml` 5.4.1
 
 The `mirror_pds.sh` driver script currently uses the [`lftp` utility](https://lftp.yar.ru/), which is available via `apt` for Debian and Ubuntu.
 
-**TODO:** Upgrade the code to run in Python 3.x and document dependencies better.
+Before running `process_all.py` the first time, copy `config-sample.yml` to `config.yml` and edit the latter’s contents.
 
-## Active Contents
+
+## Active contents
+
+**NOTE:** The code in this branch is in active development.
+
+### Driver script `config-sample.yml`
+
+Shows sample and default values for config options. Copy to `config.yml` and edit that one.
+
+### Library package `processors/`
+
+Defines processors to be run by `process_all.py`.
+
+### Driver script `process_all.py`
+
+Runs the processors for all datasets in `config.yml`.
+
+
+## Old active contents to be upgraded to run in Python 3
 
 ### Driver script `mirror_pds.sh`
 
@@ -26,7 +49,7 @@ Some previous code (removed by commit `213d47e` in this repo) ran additional pre
 
 The primary script to prepare data and metadata for DEVAS.
 
-### Driver script `run-mhc-datasets.sh`
+### Driver script `run-mhc-datasets.sh` _(becoming `process_all.py`)_
 
 There are currently six local datasets receiving updates: MHC Mossbauer, MHC Raman, MHC ChemLIBS, and three flavors of MHC SuperLIBS: 5120, 10K, and 18K. This script runs their individual processing scripts (listed below), `rsync`s the results to the appropriate directory on the DEVAS server (and also the Mössbauer data to the Specx server), then triggers a data reload on DEVAS. It’s currently run nightly by `/etc/crontab`.
 
@@ -34,11 +57,11 @@ There are currently six local datasets receiving updates: MHC Mossbauer, MHC Ram
 
 Common utilities for the processor scripts below.
 
-#### `importer.py`
+#### `importer.py` _(becoming `processors/_base.py`)_
 
 Base classes for the processor scripts below.
 
-#### `process_mhc_files.py`
+#### `process_mhc_files.py` _(becoming `processors/libs.py`)_
 
 This script processes LIBS data; it’s set up for the MHC ChemLIBS dataset.
 
@@ -56,16 +79,16 @@ This script processes LIBS data; it’s set up for the MHC SuperLIBS 5120 datase
 
 **TODO:** This script is somewhat unreliable at building on previous processing, and needs to get that sorted before it goes into heavy use.
 
-#### `process_superlibs_10k_files.py`
+#### `process_superlibs_10k_files.py` _(becoming `processors/libs.py`)_
 
 This script processes LIBS data; it’s set up for the MHC SuperLIBS 10K dataset.
 
-#### `process_superlibs_18k_files.py`
+#### `process_superlibs_18k_files.py` _(becoming `processors/libs.py`)_
 
 This script processes LIBS data; it’s set up for the MHC SuperLIBS 18k dataset.
 
 
-## Inactive contents
+## Old inactive contents to be upgraded or removed
 
 ### Driver script `cron_script.sh`
 

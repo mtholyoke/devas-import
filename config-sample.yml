@@ -1,0 +1,32 @@
+---
+### Processor configuration
+
+# This is the base directory for all datasets.
+root_dir: /mars/g/rch3/r/mdyar
+
+# The list of datasets to be run by process_all.py.
+# If base_dir does not start with /, it is appended to root_dir.
+# If comps_file, data_dir, log_dir, or output_dir do not start with /,
+# they are appendedd to base_dir.
+# log_dir, output_dir, and output_prefix have default values.
+datasets:
+  - name: MHC ChemLIBS
+    type: LIBS
+    channels: 6144
+    base_dir: MHC.LIBS/DATA
+    comps_file: COMPOSITIONS/Millennium_COMPS.xlsx
+    data_dir: PREPROCESSED_NO_BLR
+    # log_dir: nightly-logs
+    # output_dir: to-DEVAS
+    # output_prefix: prepro_no_blr
+
+
+### Logging configuration
+
+# Logs will be written to sys.stdout unless you provide a filename.
+# Default values are shown below; uncomment and change.
+logging:
+  # datefmt: '%Y-%m-%d %H:%M:%S'
+  # filename: None
+  # format: '%(asctime)s - %(levelname)s - %(message)s'
+  # level: 'INFO'

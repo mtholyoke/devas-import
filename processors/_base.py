@@ -25,8 +25,11 @@ class _BaseProcessor(object):
             self.logger = logging.getLogger()
 
     def main(self):
+        self.logger.debug(f'Entering {type(self).__name__}.main()')
         # processed_ids = set(self.get_processed_ids())
         # self.logger.info(f'Found {len(processed_ids)} processed ids')
+        print()
+        pass
 
     # def get_processed_ids(self):
     #     filename = self.output + '_meta.npz'
