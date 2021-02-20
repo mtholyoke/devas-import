@@ -28,13 +28,13 @@ Before running `process_all.py` the first time, copy `config-sample.yml` to `con
 
 Shows sample and default values for config options. Copy to `config.yml` and edit that one.
 
-### Library package `processors/`
-
-Defines processors to be run by `process_all.py`.
-
 ### Driver script `process_all.py`
 
 Runs the processors for all datasets in `config.yml`.
+
+### Library package `processors/`
+
+Defines processors to be run by `process_all.py`.
 
 
 ## Old active contents to be upgraded to run in Python 3
@@ -53,7 +53,7 @@ The primary script to prepare data and metadata for DEVAS.
 
 There are currently six local datasets receiving updates: MHC Mossbauer, MHC Raman, MHC ChemLIBS, and three flavors of MHC SuperLIBS: 5120, 10K, and 18K. This script runs their individual processing scripts (listed below), `rsync`s the results to the appropriate directory on the DEVAS server (and also the Mössbauer data to the Specx server), then triggers a data reload on DEVAS. It’s currently run nightly by `/etc/crontab`.
 
-#### `_mhc_utils.py`
+#### `_mhc_utils.py` _(becoming `processors/utils.py`)_
 
 Common utilities for the processor scripts below.
 

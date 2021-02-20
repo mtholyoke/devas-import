@@ -21,6 +21,10 @@ class _BaseProcessor(object):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
+        required = [ 'metadata' ]
+        for attr in required:
+            if not hasattr(self, attr):
+                raise AttributeError(f'Attribute "{attr}" is required')
         defaults = {
             'logger': logging.getLogger(),
             'log_dir': 'nightly-logs',
@@ -36,10 +40,17 @@ class _BaseProcessor(object):
         self.construct_paths()
         processed_ids = set(self.get_processed_ids())
         self.logger.info(f'Found {len(processed_ids)} existing IDs')
-        dir_ids, dir_files = self.get_directory_data()
-        self.logger.info(f'Found {len(dir_ids)} IDs in the data directory')
-        print(dir_ids)
-        print(dir_files)
+        input_data = self.get_input_data()
+        self.logger.info(f'Found {len(input_data)} IDs in the data directory')
+        to_process = []
+        for id, filepath in input_data:
+            if id not in processed_ids and (id, filepath) not in to_process:
+                to_process.append((id, filepath))
+        if not to_process:
+            self.logger.info('No new IDs, nothing to do')
+            return
+        # metadata = self._parse_metadata()
+        # self.process_data(to_process, metadata)
 
     def construct_paths(self):
         root = getattr(self, 'root_dir', '')
@@ -57,17 +68,17 @@ class _BaseProcessor(object):
           'output': output,
         }
 
-    def get_directory_data(self):
-        ids, files = [], []
+    # Scans the input data directory and returns tuples (ID, filepath).
+    def get_input_data(self):
+        data = []
         for input_dir in self.paths['data']:
             for root, _, filenames in os.walk(input_dir):
                 for filename in filenames:
                     if filename.lower().endswith(self.file_ext.lower()):
                         id = self._get_id(filename)
                         if id is not None:
-                            files.append(os.path.join(root, filename))
-                            ids.append(id)
-        return ids, files
+                            data.append((id, os.path.join(root, filename)))
+        return data
 
     def get_processed_ids(self):
         filename = self.output_prefix + '_meta.npz'
@@ -95,15 +106,15 @@ class _BaseProcessor(object):
         # print('Found', len(processed_ids), 'existing IDs')
         # dir_ids, dir_files = self.get_directory_data(*args.input_dir)
         # print('Found', len(dir_ids), 'IDs in the input dir')
-        new_files = []
-        new_IDs = set()
-        for ID, fname in zip(dir_ids, dir_files):
-            if ID not in processed_ids and ID not in new_IDs:
-                new_files.append(fname)
-                new_IDs.add(ID)
-        if not new_files:
-            print('No new files, nothing to do.')
-            return
+        # new_files = []
+        # new_IDs = set()
+        # for ID, fname in zip(dir_ids, dir_files):
+        #     if ID not in processed_ids and ID not in new_IDs:
+        #         new_files.append(fname)
+        #         new_IDs.add(ID)
+        # if not new_files:
+        #     print('No new files, nothing to do.')
+        #     return
         if args.master2:
             metadata = self.parse_masterfile(args.master, args.master2)
         else:

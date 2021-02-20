@@ -2,8 +2,8 @@
 
 # import numpy as np
 
+from . import utils
 from ._base import _VectorProcessor
-from ._utils import mhc_spectrum_id
 # from _mhc_utils import (
 #     find_mhc_spectrum_files, mhc_spectrum_id, parse_mhc_masterfile,
 #     process_mhc_spectra)
@@ -12,32 +12,31 @@ from ._utils import mhc_spectrum_id
 class LibsProcessor(_VectorProcessor):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        required = [ 'channels', 'comps_file' ]
+        required = [ 'channels' ]
         for attr in required:
             if not hasattr(self, attr):
                 raise AttributeError(f'Attribute "{attr}" is required')
         defaults = {
             'driver': 'family',
-            'file_ext': '.csv',
+            'file_ext': '_spect.csv',
             'pkey_field': 'Name',
         }
         for key, value in defaults.items():
             if not hasattr(self, key):
                 setattr(self, key, value)
 
-    def _get_id(self, fpath):
-        return mhc_spectrum_id(fpath)
+    def _get_id(self, filename):
+        return utils.get_spectrum_id(filename)
+
+    def get_input_data(self):
+        filepaths = []
+        for dd in self.paths['data']:
+            filepaths.extend(utils.find_spectrum_files(dd, self.file_ext))
+        return [(self._get_id(path), path)
+                for path in filepaths if self._get_id(path)]
 
 
 
-#     def get_directory_data(self, *input_dirs):
-#         fpaths = []
-#         for input_dir in input_dirs:
-#             fpaths.extend(find_mhc_spectrum_files(input_dir))
-#         print('Located', len(fpaths), 'MHC LIBS spectrum files.')
-#         ids = [self._get_id(path) for path in fpaths]
-#         return ids, fpaths
-#
 #     def parse_masterfile(self, filename):
 #         return parse_mhc_masterfile(filename)
 #
