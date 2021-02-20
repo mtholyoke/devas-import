@@ -10,7 +10,7 @@ class _BaseProcessor(object):
     '''
     Abstract base class. Requires implementations of these methods:
     - parse_masterfile(path) return meta
-    - _get_id(fname) return ids or None
+    - _get_id(filename) returns ID or None
     - _process_spectra(filename, metadata) return spectra, meta
 
     Requires implementations of these members:
@@ -21,71 +21,95 @@ class _BaseProcessor(object):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
-        if not hasattr(self, 'logger'):
-            self.logger = logging.getLogger()
+        defaults = {
+            'logger': logging.getLogger(),
+            'log_dir': 'nightly-logs',
+            'output_dir': 'to-DEVAS',
+            'output_prefix': 'prepro_no_blr',
+        }
+        for key, value in defaults.items():
+            if not hasattr(self, key):
+                setattr(self, key, value)
 
     def main(self):
-        self.logger.debug(f'Entering {type(self).__name__}.main()')
-        # processed_ids = set(self.get_processed_ids())
-        # self.logger.info(f'Found {len(processed_ids)} processed ids')
-        print()
-        pass
+        self.logger.debug(f'Entering {type(self).__name__}.main() for {self.name}')
+        self.construct_paths()
+        processed_ids = set(self.get_processed_ids())
+        self.logger.info(f'Found {len(processed_ids)} existing IDs')
+        dir_ids, dir_files = self.get_directory_data()
+        self.logger.info(f'Found {len(dir_ids)} IDs in the data directory')
+        print(dir_ids)
+        print(dir_files)
 
-    # def get_processed_ids(self):
-    #     filename = self.output + '_meta.npz'
-    #     if not os.path.isfile(filename):
-    #         return []
-    #     meta = np.load(filename)
-    #     return meta[self.pkey_field]
+    def construct_paths(self):
+        root = getattr(self, 'root_dir', '')
+        base = os.path.join(root, getattr(self, 'base_dir', ''))
+        data = getattr(self, 'data_dir', '')
+        if isinstance(data, str):
+            data = [data]
+        data = [os.path.join(base, d) for d in data]
+        log = os.path.join(base, getattr(self, 'log_dir', ''))
+        output = os.path.join(base, getattr(self, 'output_dir', ''))
+        self.paths = {
+          'base': base,
+          'data': data,
+          'log': log,
+          'output': output,
+        }
+
+    def get_directory_data(self):
+        ids, files = [], []
+        for input_dir in self.paths['data']:
+            for root, _, filenames in os.walk(input_dir):
+                for filename in filenames:
+                    if filename.lower().endswith(self.file_ext.lower()):
+                        id = self._get_id(filename)
+                        if id is not None:
+                            files.append(os.path.join(root, filename))
+                            ids.append(id)
+        return ids, files
+
+    def get_processed_ids(self):
+        filename = self.output_prefix + '_meta.npz'
+        filepath = os.path.join(self.paths['output'], filename)
+        self.logger.debug(f'Checking for previous output file {filepath}')
+        if not os.path.isfile(filepath):
+            self.logger.info(f'No previous output file {filepath}')
+            return []
+        meta = np.load(filepath)
+        return meta[self.pkey_field]
 
 
-    # def old__main(self):
-    #     # ap = ArgumentParser()
-    #     # ap.add_argument('-i', '--input-dir', type=str, nargs='+',
-    #     #                 help='Path to directories containing input data.')
-    #     # ap.add_argument('-o', '--output-prefix', type=str, required=True,
-    #     #                 help='Path to directory containing output data.')
-    #     # ap.add_argument('-m', '--master', required=True,
-    #     #                 help='Path to the master metadata file.')
-    #     # ap.add_argument('-m2', '--master2', required=False,
-    #     #                 help='Path to an auxiliary master metadata file.')
-    #     # args = ap.parse_args()
-    #     # processed_ids = set(self.get_processed_ids(args.output_prefix))
-    #     # print('Found', len(processed_ids), 'existing IDs')
-    #     dir_ids, dir_files = self.get_directory_data(*args.input_dir)
-    #     print('Found', len(dir_ids), 'IDs in the input dir')
-    #     new_files = []
-    #     new_IDs = set()
-    #     for ID, fname in zip(dir_ids, dir_files):
-    #         if ID not in processed_ids and ID not in new_IDs:
-    #             new_files.append(fname)
-    #             new_IDs.add(ID)
-    #     if not new_files:
-    #         print('No new files, nothing to do.')
-    #         return
-    #     if args.master2:
-    #         metadata = self.parse_masterfile(args.master, args.master2)
-    #     else:
-    #         metadata = self.parse_masterfile(args.master)
-    #     self.process_data(new_files, metadata, args.output_prefix)
-    #
-    # def get_directory_data(self, *input_dirs):
-    #     ids, files = [], []
-    #     for input_dir in input_dirs:
-    #         for root, _, filenames in os.walk(input_dir):
-    #             for filename in filenames:
-    #                 if filename.lower().endswith(self.file_ext.lower()):
-    #                     files.append(os.path.join(root, filename))
-    #                     ids.append(self._get_id(filename))
-    #     return ids, files
-    #
-    # # def old__get_processed_ids(self, file_prefix):
-    # #     fname = file_prefix + '_meta.npz'
-    # #     if not os.path.isfile(fname):
-    # #         return []
-    # #     meta = np.load(fname)
-    # #     return meta[self.pkey_field]
-    #
+    def old__main(self):
+        # ap = ArgumentParser()
+        # ap.add_argument('-i', '--input-dir', type=str, nargs='+',
+        #                 help='Path to directories containing input data.')
+        # ap.add_argument('-o', '--output-prefix', type=str, required=True,
+        #                 help='Path to directory containing output data.')
+        # ap.add_argument('-m', '--master', required=True,
+        #                 help='Path to the master metadata file.')
+        # ap.add_argument('-m2', '--master2', required=False,
+        #                 help='Path to an auxiliary master metadata file.')
+        # args = ap.parse_args()
+        # processed_ids = set(self.get_processed_ids(args.output_prefix))
+        # print('Found', len(processed_ids), 'existing IDs')
+        # dir_ids, dir_files = self.get_directory_data(*args.input_dir)
+        # print('Found', len(dir_ids), 'IDs in the input dir')
+        new_files = []
+        new_IDs = set()
+        for ID, fname in zip(dir_ids, dir_files):
+            if ID not in processed_ids and ID not in new_IDs:
+                new_files.append(fname)
+                new_IDs.add(ID)
+        if not new_files:
+            print('No new files, nothing to do.')
+            return
+        if args.master2:
+            metadata = self.parse_masterfile(args.master, args.master2)
+        else:
+            metadata = self.parse_masterfile(args.master)
+        self.process_data(new_files, metadata, args.output_prefix)
+
     # def _write_metadata(self, fname, meta):
     #     if os.path.exists(fname):
     #         existing = np.load(fname, allow_pickle=True)

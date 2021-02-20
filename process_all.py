@@ -43,5 +43,11 @@ if __name__ == '__main__':
     }
 
     for dataset in config['datasets']:
+        if 'name' not in dataset:
+            logging.error('Dataset missing name; skipping')
+            continue
+        if 'type' not in dataset:
+            logging.error(f'Dataset {dataset.name} missing type; skipping')
+            continue
         dataset['root_dir'] = config['root_dir']
         processor[dataset['type']](**dataset).main()

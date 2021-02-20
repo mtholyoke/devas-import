@@ -8,6 +8,7 @@ root_dir: /mars/g/rch3/r/mdyar
 # If base_dir does not start with /, it is appended to root_dir.
 # If comps_file, data_dir, log_dir, or output_dir do not start with /,
 # they are appendedd to base_dir.
+# data_dir may be a list instead of a scalar string.
 # log_dir, output_dir, and output_prefix have default values.
 datasets:
   - name: MHC ChemLIBS

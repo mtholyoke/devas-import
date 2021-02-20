@@ -3,6 +3,7 @@
 # import numpy as np
 
 from ._base import _VectorProcessor
+from ._utils import mhc_spectrum_id
 # from _mhc_utils import (
 #     find_mhc_spectrum_files, mhc_spectrum_id, parse_mhc_masterfile,
 #     process_mhc_spectra)
@@ -11,9 +12,21 @@ from ._base import _VectorProcessor
 class LibsProcessor(_VectorProcessor):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.driver = 'family'
-        self.file_ext = '.csv'
-        self.pkey_field = 'Name'
+        required = [ 'channels', 'comps_file' ]
+        for attr in required:
+            if not hasattr(self, attr):
+                raise AttributeError(f'Attribute "{attr}" is required')
+        defaults = {
+            'driver': 'family',
+            'file_ext': '.csv',
+            'pkey_field': 'Name',
+        }
+        for key, value in defaults.items():
+            if not hasattr(self, key):
+                setattr(self, key, value)
+
+    def _get_id(self, fpath):
+        return mhc_spectrum_id(fpath)
 
 
 
@@ -24,9 +37,6 @@ class LibsProcessor(_VectorProcessor):
 #         print('Located', len(fpaths), 'MHC LIBS spectrum files.')
 #         ids = [self._get_id(path) for path in fpaths]
 #         return ids, fpaths
-#
-#     def _get_id(self, fpath):
-#         return mhc_spectrum_id(fpath)
 #
 #     def parse_masterfile(self, filename):
 #         return parse_mhc_masterfile(filename)
