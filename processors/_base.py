@@ -9,8 +9,8 @@ import os
 class _BaseProcessor(object):
     '''
     Abstract base class. Requires implementations of these methods:
-    - parse_masterfile(path) return meta
     - _get_id(filename) returns ID or None
+    - _parse_metadata() returns parsed metadata structure
     - _process_spectra(filename, metadata) return spectra, meta
 
     Requires implementations of these members:
@@ -49,12 +49,16 @@ class _BaseProcessor(object):
         if not to_process:
             self.logger.info('No new IDs, nothing to do')
             return
-        # metadata = self._parse_metadata()
+        metadata = self._parse_metadata()
         # self.process_data(to_process, metadata)
 
     def construct_paths(self):
         root = getattr(self, 'root_dir', '')
         base = os.path.join(root, getattr(self, 'base_dir', ''))
+        meta = getattr(self, 'metadata')
+        if isinstance(meta, str):
+            meta = [meta]
+        meta = [os.path.join(base, f) for f in meta]
         data = getattr(self, 'data_dir', '')
         if isinstance(data, str):
             data = [data]
@@ -63,6 +67,7 @@ class _BaseProcessor(object):
         output = os.path.join(base, getattr(self, 'output_dir', ''))
         self.paths = {
           'base': base,
+          'metadata': meta,
           'data': data,
           'log': log,
           'output': output,
@@ -115,10 +120,10 @@ class _BaseProcessor(object):
         # if not new_files:
         #     print('No new files, nothing to do.')
         #     return
-        if args.master2:
-            metadata = self.parse_masterfile(args.master, args.master2)
-        else:
-            metadata = self.parse_masterfile(args.master)
+        # if args.master2:
+        #     metadata = self.parse_masterfile(args.master, args.master2)
+        # else:
+        #     metadata = self.parse_masterfile(args.master)
         self.process_data(new_files, metadata, args.output_prefix)
 
     # def _write_metadata(self, fname, meta):

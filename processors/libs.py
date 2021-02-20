@@ -35,7 +35,8 @@ class LibsProcessor(_VectorProcessor):
         return [(self._get_id(path), path)
                 for path in filepaths if self._get_id(path)]
 
-
+    def _parse_metadata():
+        return utils.parse_millennium_comps(self.paths['metadata'][0])
 
 #     def parse_masterfile(self, filename):
 #         return parse_mhc_masterfile(filename)
