@@ -49,5 +49,7 @@ if __name__ == '__main__':
         if 'type' not in dataset:
             logging.error(f'Dataset {dataset.name} missing type; skipping')
             continue
-        dataset['root_dir'] = config['root_dir']
+        global_config = ['root_dir', 'chunk_size']
+        for attr in global_config:
+            dataset[attr] = config[attr]
         processor[dataset['type']](**dataset).main()

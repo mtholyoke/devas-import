@@ -30,6 +30,7 @@ class _BaseProcessor(object):
             if not hasattr(self, attr):
                 raise AttributeError(f'Attribute "{attr}" is required')
         defaults = {
+            'chunk_size': 500,
             'logger': logging.getLogger(),
             'log_dir': 'nightly-logs',
             'output_dir': 'to-DEVAS',
@@ -54,7 +55,7 @@ class _BaseProcessor(object):
             self.logger.info('No new IDs, nothing to do')
             return
         self.metadata = self._parse_metadata()
-        self.process_all(to_process)
+        self.process_all(to_process, chunk_size=self.chunk_size)
         self.logger.info(f'Finished processing for {self.name}')
 
     def construct_paths(self):
@@ -69,11 +70,15 @@ class _BaseProcessor(object):
             data = [data]
         data = [os.path.join(base, d) for d in data]
         logdir = os.path.join(base, getattr(self, 'log_dir', ''))
+        if not os.path.exists(logdir):
+            os.makedirs(logdir, mode=0o755)
         logfile = self.safe_name + '-' + strftime('%Y-%m-%d')
         if hasattr(self, 'log_suffix') and self.log_suffix:
             logfile += '-' + self.log_suffix
         logpath = os.path.join(logdir, logfile + '.log')
         output = os.path.join(base, getattr(self, 'output_dir', ''))
+        if not os.path.exists(output):
+            os.makedirs(output, mode=0o755)
         self.paths = {
           'base': base,
           'metadata': meta,
@@ -111,7 +116,7 @@ class _BaseProcessor(object):
         meta = np.load(filepath)
         return meta[self.pkey_field]
 
-    def process_all(self, to_process, chunk_size=500):
+    def process_all(self, to_process, chunk_size):
         self.logger.info('Processing %d files in chunks of %d',
                          len(to_process), chunk_size)
         total_chunks = int(np.ceil(float(len(to_process)) / chunk_size))
