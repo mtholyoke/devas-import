@@ -8,7 +8,7 @@ root_dir: /mars/g/rch3/r/mdyar
 # If base_dir does not start with /, it is appended to root_dir.
 # If metadata, data_dir, log_dir, or output_dir do not start with /,
 # they are appendedd to base_dir.
-# metadata may be a list for some dataset types.
+# meta_file may be a list for some dataset types.
 # data_dir can be a list or a string.
 # Only log_dir, output_dir, and output_prefix have default values.
 datasets:
@@ -16,7 +16,7 @@ datasets:
     type: LIBS
     channels: 6144
     base_dir: MHC.LIBS/DATA
-    metadata: COMPOSITIONS/Millennium_COMPS.xlsx
+    meta_file: COMPOSITIONS/Millennium_COMPS.xlsx
     data_dir: PREPROCESSED_NO_BLR
     # log_dir: nightly-logs
     # output_dir: to-DEVAS

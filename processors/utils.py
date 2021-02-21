@@ -1,10 +1,20 @@
 #!/usr/bin/env python3
 
+import csv
 import numpy as np
 import openpyxl
 import os
 from collections import defaultdict
 from glob import glob
+
+
+def can_be_float(string):
+    try:
+        float(string)
+    except Exception:
+        return False
+    else:
+        return True
 
 
 # Scan the data directory for *_spect.csv files.
@@ -34,6 +44,48 @@ def get_spectrum_id(filename):
     if not name.endswith('_spect') or len(name) < 7:
         return None
     return name[:-6]
+
+
+META_FIELDS = ['Carousel', 'Sample', 'Target', 'Location', 'Atmosphere',
+               'LaserAttenuation', 'DistToTarget', 'Date', 'Projects']
+
+
+def load_spectra(filepath, channels=None):
+    with open(filepath, 'r') as f:
+        contents = list(csv.reader(f, quotechar='+'))
+    meta = {}
+    prepro = True
+    # Spectra are assumed to start at first line of comma-separated data
+    for i, line in enumerate(contents):
+        if line and ':' in line[0]:
+            field = line[0].split(':')[0]
+            val = line[0].split(':')[1].strip()
+            if field == 'Carousels':
+                field = 'Carousel'
+                val = val.split(' ')[0].strip()
+            if field == 'Dates':
+                field = 'Date'
+                val = val.split(' ')[0].strip()
+            if field == 'Locations':
+                field = 'Location'
+                val = val.split(' ')[0].strip()
+            if field in META_FIELDS:
+                meta[field] = val
+        elif all(can_be_float(item) for item in line):
+            if '.' not in line:
+                # All integers means this is formatted.
+                prepro = False
+            break
+    if meta['Sample'].lower() in ('ti', 'dark'):
+        return
+    try:
+        data = np.array(contents[i:], dtype=float)
+    except Exception as e:
+        return f'Bad spectra in file {filepath}: {e}'
+    if channels and data.shape[0] != channels:
+        e = f'expected {channels} channels, got {data.shape[0]}'
+        return f'Wrong channel count in file {filepath}: {e}'
+    return data.T, meta, prepro
 
 
 def parse_millennium_comps(filepath):

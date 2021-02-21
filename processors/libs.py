@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
-# import numpy as np
-
+import numpy as np
+import sys
 from . import utils
 from ._base import _VectorProcessor
-# from _mhc_utils import (
-#     find_mhc_spectrum_files, mhc_spectrum_id, parse_mhc_masterfile,
-#     process_mhc_spectra)
 
 
 class LibsProcessor(_VectorProcessor):
@@ -39,20 +36,8 @@ class LibsProcessor(_VectorProcessor):
         self.logger.debug('Parsing metadata')
         return utils.parse_millennium_comps(self.paths['metadata'][0])
 
-    def _process_spectra(self, filepath, metadata):
-        print(f'Spectra processing happens for {filepath}')
-        return None, None
-
-    def old_process_spectra(self, fname, masterdata):
-        result = process_mhc_spectra(fname, n_chans=self.n_chans)
-        if not result:
-            return
-        spectra, meta, is_prepro = result
-        if is_prepro:
-            spectra = spectra[1:]
-        spectra = np.vstack((spectra.mean(0), spectra))
-        shot_num = np.arange(spectra.shape[0])
-        all_samps, all_comps, all_noncomps = masterdata
+    def prepare_meta(self, meta, shot_num, name):
+        all_samps, all_comps, all_noncomps = self.metadata
         elements = sorted(all_comps.keys())
         sample = meta['Sample'].lower()
         all_samps = [samp.lower() if samp else None for samp in all_samps]
@@ -64,8 +49,8 @@ class LibsProcessor(_VectorProcessor):
         try:
             ind = all_samps.index(sample)
         except Exception as e:
-            print('Failed to get compositions for', fname, ': ', e)
-            return
+            self.logger.warn(f'Failed to get comps for {filename}: {e}')
+            return None
         else:
             comps = [all_comps[elem][ind] for elem in elements]
             rock_type = all_noncomps[0][ind]
@@ -74,8 +59,8 @@ class LibsProcessor(_VectorProcessor):
             if all_noncomps[3][ind]:
                 dopant = all_noncomps[3][ind]
             if all_noncomps[4][ind]:
-                projects = all_noncomps[4][ind].upper().translate({ord(c): None for c in ' ;'})
-        name = self._get_id(fname)
+                projects = all_noncomps[4][ind].upper()
+                projects = projects.translate({ord(c): None for c in ' ;'})
         metas = np.broadcast_arrays(shot_num, int(meta['Carousel']),
                                     meta['Sample'], int(meta['Target']),
                                     int(meta['Location']), meta['Atmosphere'],
@@ -88,4 +73,19 @@ class LibsProcessor(_VectorProcessor):
             'LaserAttenuation', 'DistToTarget', 'Date', 'Projects', 'Name',
             'TASRockType', 'RandomNumber', 'Matrix', 'ApproxDopantConc'
         ] + elements
-        return spectra, dict(zip(meta_fields, metas))
+        return dict(zip(meta_fields, metas))
+
+    def _process_spectra(self, datafile):
+        result = utils.load_spectra(datafile[1], self.channels)
+        if not result:
+            return
+        if isinstance(result, str):
+            self.logger.warn(result)
+            return
+        spectra, meta, is_prepro = result
+        if is_prepro:
+            spectra = spectra[1:]
+        spectra = np.vstack((spectra.mean(0), spectra))
+        shot_num = np.arange(spectra.shape[0])
+        meta = self.prepare_meta(meta, shot_num, name=datafile[0])
+        return spectra, meta
