@@ -9,6 +9,7 @@ from ._base import _VectorProcessor
 class LibsProcessor(_VectorProcessor):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.logger = self.get_child_logger()
         required = ['channels']
         for attr in required:
             if not hasattr(self, attr):

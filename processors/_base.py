@@ -3,8 +3,9 @@
 import h5py
 import logging
 import numpy as np
+import re
 import os
-from time import time
+from time import time, strftime
 
 
 class _BaseProcessor(object):
@@ -23,6 +24,7 @@ class _BaseProcessor(object):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
+        self.safe_name = re.sub(r'\W', '_', self.name)
         required = ['meta_file']
         for attr in required:
             if not hasattr(self, attr):
@@ -36,10 +38,10 @@ class _BaseProcessor(object):
         for key, value in defaults.items():
             if not hasattr(self, key):
                 setattr(self, key, value)
+        self.construct_paths()
 
     def main(self):
         self.logger.info(f'Starting processing for {self.name}')
-        self.construct_paths()
         processed_ids = set(self.get_processed_ids())
         self.logger.info(f'Found {len(processed_ids)} IDs in existing output')
         input_data = self.get_input_data()
@@ -53,6 +55,7 @@ class _BaseProcessor(object):
             return
         self.metadata = self._parse_metadata()
         self.process_all(to_process)
+        self.logger.info(f'Finished processing for {self.name}')
 
     def construct_paths(self):
         root = getattr(self, 'root_dir', '')
@@ -65,15 +68,27 @@ class _BaseProcessor(object):
         if isinstance(data, str):
             data = [data]
         data = [os.path.join(base, d) for d in data]
-        log = os.path.join(base, getattr(self, 'log_dir', ''))
+        logdir = os.path.join(base, getattr(self, 'log_dir', ''))
+        logfile = self.safe_name + '-' + strftime('%Y-%m-%d')
+        if hasattr(self, 'log_suffix') and self.log_suffix:
+            logfile += '-' + self.log_suffix
+        logpath = os.path.join(logdir, logfile + '.log')
         output = os.path.join(base, getattr(self, 'output_dir', ''))
         self.paths = {
           'base': base,
           'metadata': meta,
           'data': data,
-          'log': log,
+          'log': logpath,
           'output': output,
         }
+
+    # Creates a child log with the root logger’s formatter.
+    def get_child_logger(self):
+        handler = logging.FileHandler(self.paths['log'])
+        handler.setFormatter(self.logger.handlers[0].formatter)
+        logger = self.logger.getChild(self.safe_name)
+        logger.addHandler(handler)
+        return logger
 
     # Scans the input data directory and returns tuples (ID, filepath).
     def get_input_data(self):
@@ -92,7 +107,6 @@ class _BaseProcessor(object):
         filepath = os.path.join(self.paths['output'], filename)
         self.logger.debug(f'Checking for previous output file {filepath}')
         if not os.path.isfile(filepath):
-            self.logger.info(f'No previous output file {filepath}')
             return []
         meta = np.load(filepath)
         return meta[self.pkey_field]
@@ -107,7 +121,7 @@ class _BaseProcessor(object):
             self.logger.info(f'Starting chunk {i} of {total_chunks}')
             self.process_chunks(to_process, trajectory)
             tic = time()
-            self.logger.debug(f'Chunk {i} completed in {tic - toc} seconds')
+            self.logger.debug(f'Chunk {i} done in {tic - toc:0.1f} seconds')
             toc = tic
         return
 
