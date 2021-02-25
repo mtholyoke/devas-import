@@ -11,10 +11,10 @@ from time import time, strftime
 class _BaseProcessor(object):
     '''
     Abstract base class. Requires implementations of these methods:
-    - _get_id(filename) returns ID or None
-    - _parse_metadata() returns parsed metadata structure
-    - _process_spectra(filename, metadata) return spectra, meta
-    - _write_data(output_pattern, all_spectra, all_meta)
+    - get_id(filename) returns ID or None
+    - parse_metadata() returns parsed metadata structure
+    - process_spectra(filename, metadata) return spectra, meta
+    - write_data(output_pattern, all_spectra, all_meta)
 
     Requires implementations of these members:
     - driver, either 'family' for distributed or None for single file
@@ -54,7 +54,7 @@ class _BaseProcessor(object):
         if not to_process:
             self.logger.info('No new IDs, nothing to do')
             return
-        self.metadata = self._parse_metadata()
+        self.metadata = self.parse_metadata()
         self.process_all(to_process, chunk_size=self.chunk_size)
         self.logger.info(f'Finished processing for {self.name}')
 
@@ -102,7 +102,7 @@ class _BaseProcessor(object):
             for root, _, filenames in os.walk(input_dir):
                 for filename in filenames:
                     if filename.lower().endswith(self.file_ext.lower()):
-                        id = self._get_id(filename)
+                        id = self.get_id(filename)
                         if id is not None:
                             data.append((id, os.path.join(root, filename)))
         return data
@@ -149,12 +149,12 @@ class _BaseProcessor(object):
         output_suffix = '.hdf5' if self.driver is None else '.%03d.hdf5'
         output_pattern = self.output_prefix + output_suffix
         ouput_filepath = os.path.join(self.paths['output'], output_pattern)
-        self._write_data(ouput_filepath, all_spectra, all_meta)
-        self._write_metadata(all_meta)
+        self.write_data(ouput_filepath, all_spectra, all_meta)
+        self.write_metadata(all_meta)
 
     # This is extended by _VectorProcessor.
     def process_file(self, datafile):
-        processed = self._process_spectra(datafile)
+        processed = self.process_spectra(datafile)
         if processed is None or processed[0] is None or processed[1] is None:
             self.logger.warn(f'Problem processing {datafile[1]}')
             return None, None
@@ -167,7 +167,7 @@ class _BaseProcessor(object):
         return dict((k, np.array([m[k] for m in all_meta]))
                     for k in all_meta[0].keys())
 
-    def _write_metadata(self, all_meta):
+    def write_metadata(self, all_meta):
         filename = self.output_prefix + '_meta.npz'
         filepath = os.path.join(self.paths['output'], filename)
         if os.path.exists(filepath):
@@ -194,7 +194,7 @@ class _VectorProcessor(_BaseProcessor):
             return None, None
         return spectra, meta
 
-    def _write_data(self, filepath, all_spectra, all_meta):
+    def write_data(self, filepath, all_spectra, all_meta):
         spectra = np.vstack(all_spectra)
         fh = h5py.File(filepath, 'a', driver=self.driver, libver='latest')
         if '/spectra' in fh:
@@ -209,7 +209,7 @@ class _VectorProcessor(_BaseProcessor):
 
 
 class _TrajectoryProcessor(_BaseProcessor):
-    def _write_data(self, filepath, all_spectra, all_meta):
+    def write_data(self, filepath, all_spectra, all_meta):
         ids = all_meta[self.pkey_field]
         fh = h5py.File(filepath, 'a', driver=self.driver, libver='latest')
         for id, spectrum in zip(ids, all_spectra):

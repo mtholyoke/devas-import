@@ -5,7 +5,7 @@ import os
 import sys
 import yaml
 from argparse import ArgumentParser
-from processors import LibsProcessor
+from processors import LIBSProcessor
 
 
 def logging_setup(log_cfg):
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     logging_setup(config['logging'])
 
     processor = {
-        'LIBS': LibsProcessor,
+        'LIBS': LIBSProcessor,
     }
 
     for dataset in config['datasets']:

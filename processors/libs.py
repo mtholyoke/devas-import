@@ -6,7 +6,7 @@ from . import utils
 from ._base import _VectorProcessor
 
 
-class LibsProcessor(_VectorProcessor):
+class LIBSProcessor(_VectorProcessor):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.logger = self.get_child_logger()
@@ -23,17 +23,17 @@ class LibsProcessor(_VectorProcessor):
             if not hasattr(self, key):
                 setattr(self, key, value)
 
-    def _get_id(self, filename):
+    def get_id(self, filename):
         return utils.get_spectrum_id(filename)
 
     def get_input_data(self):
         filepaths = []
         for dd in self.paths['data']:
             filepaths.extend(utils.find_spectrum_files(dd, self.file_ext))
-        return [(self._get_id(path), path)
-                for path in filepaths if self._get_id(path)]
+        return [(self.get_id(path), path)
+                for path in filepaths if self.get_id(path)]
 
-    def _parse_metadata(self):
+    def parse_metadata(self):
         self.logger.debug('Parsing metadata')
         return utils.parse_millennium_comps(self.paths['metadata'][0])
 
@@ -76,7 +76,7 @@ class LibsProcessor(_VectorProcessor):
         ] + elements
         return dict(zip(meta_fields, metas))
 
-    def _process_spectra(self, datafile):
+    def process_spectra(self, datafile):
         result = utils.load_spectra(datafile[1], self.channels)
         if not result:
             return
@@ -84,7 +84,12 @@ class LibsProcessor(_VectorProcessor):
             self.logger.warn(result)
             return
         spectra, meta, is_prepro = result
+        # TODO: Sort out the way this needs to work. This test and the
+        # reassignment of spectra was copied from process_mhc_files;
+        # the SuperLIBS processors have a failure condition instead:
+        # assert is_prepro, 'Unexpected SuperLIBS raw data'
         if is_prepro:
+            self.logger.warn(f'Found prepro in {datafile[1]}')
             spectra = spectra[1:]
         spectra = np.vstack((spectra.mean(0), spectra))
         shot_num = np.arange(spectra.shape[0])

@@ -79,14 +79,6 @@ This script processes LIBS data; it’s set up for the MHC SuperLIBS 5120 datase
 
 **TODO:** This script is somewhat unreliable at building on previous processing, and needs to get that sorted before it goes into heavy use.
 
-#### `process_superlibs_10k_files.py` _(becoming `processors/libs.py`)_
-
-This script processes LIBS data; it’s set up for the MHC SuperLIBS 10K dataset.
-
-#### `process_superlibs_18k_files.py` _(becoming `processors/libs.py`)_
-
-This script processes LIBS data; it’s set up for the MHC SuperLIBS 18k dataset.
-
 
 ## Old inactive contents to be upgraded or removed
 
