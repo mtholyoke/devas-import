@@ -25,6 +25,7 @@ class RamanImporter(_TrajImporter):
         for i, row in enumerate(sheet.rows):
             if i < 1 or row[id_ind].value is None:
                 continue
+            row[0].value = int(str(row[0].value).split('_')[0])
             for header, cell in zip(headers, row):
                 if header is not None:
                     meta[header].append(cell.value)
@@ -34,7 +35,7 @@ class RamanImporter(_TrajImporter):
     def _process_spectra(self, fname, metadata):
         pkeys = np.array(metadata[self.pkey_field])
         meta_idx, = np.where(pkeys == self._get_id(fname))
-        
+
         if len(meta_idx) != 1:
             print('  Cannot match spectrum and masterfile', fname)
             return
