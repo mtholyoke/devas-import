@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import sys
 from . import utils
 from ._base import _VectorProcessor
 
