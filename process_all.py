@@ -35,6 +35,7 @@ if __name__ == '__main__':
                     help='YAML file with configuration options.')
     args = ap.parse_args()
     config = yaml.safe_load(args.config)
+    config.setdefault('chunk_size', 500)
 
     logging_setup(config['logging'])
 

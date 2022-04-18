@@ -2,7 +2,7 @@
 ### Processor configuration
 
 # This is the base directory for all datasets.
-root_dir: /mars/g/rch3/r/mdyar
+root_dir: /mnt/mars/mdyar
 
 # How many data files to process in each batch (default 500).
 # chunk_size: 500
@@ -10,7 +10,7 @@ root_dir: /mars/g/rch3/r/mdyar
 # The list of datasets to be run by process_all.py.
 # If base_dir does not start with /, it is appended to root_dir.
 # If metadata, data_dir, log_dir, or output_dir do not start with /,
-# they are appendedd to base_dir.
+# they are appended to base_dir.
 # meta_file may be a list for some dataset types.
 # data_dir can be a list or a string.
 # Only log_dir, output_dir, and output_prefix have default values.
