@@ -49,7 +49,7 @@ class LIBSProcessor(_VectorProcessor):
         try:
             ind = all_samps.index(sample)
         except Exception as e:
-            self.logger.warn(f'Failed to get comps for {filename}: {e}')
+            self.logger.warn(f'Failed to get comps for {name}: {e}')
             return None
         else:
             comps = [all_comps[elem][ind] for elem in elements]

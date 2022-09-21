@@ -51,7 +51,7 @@ META_FIELDS = ['Carousel', 'Sample', 'Target', 'Location', 'Atmosphere',
 
 
 def load_spectra(filepath, channels=None):
-    with open(filepath, 'r') as f:
+    with open(filepath, 'r', encoding='latin1') as f:
         contents = list(csv.reader(f, quotechar='+'))
     meta = {}
     prepro = True
