@@ -25,7 +25,11 @@ class RamanImporter(_TrajImporter):
         for i, row in enumerate(sheet.rows):
             if i < 1 or row[id_ind].value is None:
                 continue
+            row[0].value = int(str(row[0].value).split('_')[0])
             for header, cell in zip(headers, row):
+                if header == 'spectrum_number':
+                    if cell.value in meta[header]:
+                        print('Duplicate value: ', cell.value)
                 if header is not None:
                     meta[header].append(cell.value)
         print('  done. %.2fs' % (time() - start))

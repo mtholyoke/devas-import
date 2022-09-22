@@ -14,6 +14,7 @@ class MossbauerImporter(_TrajImporter):
     file_ext = '.txt'
     pkey_field = 'Sample #'
     n_chans = 512
+    skipped = 0
     superman_fields = set(['Sample #', 'T(K)', 'Sample Name', 'Post?',
                            'Dana Group', 'Group Folder', 'Owner/Source',
                            # Add 'Pubs' but make a search widget first
@@ -49,6 +50,7 @@ class MossbauerImporter(_TrajImporter):
         meta_idx = meta_idx[0]
         if metadata['Post?'][meta_idx] is None or \
             metadata['Post?'][meta_idx].upper()!='Y':
+            self.skipped += 1
             return
         meta = {key: val[meta_idx] for key, val in metadata.items()}
         spectrum = []
@@ -64,12 +66,16 @@ class MossbauerImporter(_TrajImporter):
                 except ValueError:
                     pass
         if len(spectrum) != self.n_chans:
+            print('  Expected', self.n_chans, 'channels, got', len(spectrum), 'in', fname)
             return
         return np.array(spectrum, dtype=float), meta
 
     def _get_id(self, path):
         return basename(path).split('.')[0]
 
+    def _write_metadata(self, fname, meta):
+        _TrajImporter._write_metadata(self, fname, meta)
+        print('  skipped', self.skipped, 'spectra so far because the masterfile disabled them.')
 
 if __name__ == '__main__':
     MossbauerImporter().main()
