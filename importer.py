@@ -152,7 +152,8 @@ class _TrajImporter(_BaseImporter):
         for ID, spectrum in zip(ids, spectra):
             path = '/spectra/%s' % ID
             if path in fh:
-                print('WARNING: Overwriting previous entry in', path)
+                if np.array_equal(fh[path][:], spectrum):
+                    print('WARNING: Overwriting previous entry in', path)
                 del fh[path]
             fh.create_dataset(path, data=spectrum)
         fh.close()
