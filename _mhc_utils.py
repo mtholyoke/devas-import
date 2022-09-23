@@ -101,6 +101,8 @@ def process_mhc_spectra(fname, n_chans=None):
             if field == 'Locations':
                 field = 'Location'
                 val = val.split(' ')[0].strip()
+            if field == 'Target:' and val.startswith('T'):
+                val = val.lstrip('T')
             if field in META_FIELDS:
                 meta[field] = val
         elif all(_is_float(item) for item in line):
