@@ -29,8 +29,8 @@ class LIBSProcessor(_VectorProcessor):
         filepaths = []
         for dd in self.paths['data']:
             filepaths.extend(utils.find_spectrum_files(dd, self.file_ext))
-        return [(self.get_id(path), path)
-                for path in filepaths if self.get_id(path)]
+        return {'.': (self.get_id(path), path)
+                for path in filepaths if self.get_id(path)}
 
     def parse_metadata(self):
         self.logger.debug('Parsing metadata')

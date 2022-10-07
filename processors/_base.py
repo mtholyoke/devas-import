@@ -46,11 +46,12 @@ class _BaseProcessor(object):
         processed_ids = set(self.get_processed_ids())
         self.logger.info(f'Found {len(processed_ids)} IDs in existing output')
         input_data = self.get_input_data()
-        self.logger.info(f'Found {len(input_data)} IDs in the data directory')
-        to_process = []
-        for id, filepath in input_data:
+        print(type(input_data))
+        self.logger.info(f'Found {len([x for batch in input_data.values() for x in batch])} IDs in the data directory') #ALTERED
+        to_process = self.filter_input_data(input_data, processed_ids) #ALTERED
+        for id, filepath in input_data.items():
             if id not in processed_ids and (id, filepath) not in to_process:
-                to_process.append((id, filepath))
+                to_process[id] = filepath
         if not to_process:
             self.logger.info('No new IDs, nothing to do')
             return
@@ -87,6 +88,21 @@ class _BaseProcessor(object):
           'output': output,
         }
 
+   
+    def filter_input_data(self, input_data, processed_ids):
+        to_process = {}
+        for id, filepath in input_data.items():
+            if id not in processed_ids and (id, filepath) not in to_process:
+                to_process[id] = filepath
+        if len(to_process.keys()) == 1 and list(to_process.keys())[0] == '.':
+            self.logger.info('Processing %d files in batches of %d',
+                         len(to_process), self.batch_size)
+            total_batches = int(np.ceil(float(len(to_process)) / self.batch_size))
+            for batch_index in range(0, total_batches):
+                to_process[batch_index] = "batch " + str(batch_index+1) + " of " + str(total_batches)
+        return to_process
+
+    
     # Creates a child log with the root logger’s formatter.
     def get_child_logger(self):
         handler = logging.FileHandler(self.paths['log'])
@@ -105,7 +121,7 @@ class _BaseProcessor(object):
                         id = self.get_id(filename)
                         if id is not None:
                             data.append((id, os.path.join(root, filename)))
-        return data
+        return {'.': data} #ALTERED 
 
     def get_processed_ids(self):
         filename = self.output_prefix + '_meta.npz'
@@ -117,14 +133,10 @@ class _BaseProcessor(object):
         return meta[self.pkey_field]
 
     def process_all(self, to_process, batch_size):
-        self.logger.info('Processing %d files in batches of %d',
-                         len(to_process), batch_size)
-        total_batches = int(np.ceil(float(len(to_process)) / batch_size))
         trajectory = issubclass(type(self), _TrajectoryProcessor)
         toc = time()
         for i, batch_index in enumerate(range(0, len(to_process), batch_size), start=1):
-            self.logger.info(f'Starting batch {i} of {total_batches}')
-            file_list = to_process[batch_index:batch_index+batch_size]
+            file_list = to_process[batch_index]
             self.process_batches(file_list, trajectory)
             tic = time()
             self.logger.debug(f'Batch {i} done in {tic - toc:0.1f} seconds')
