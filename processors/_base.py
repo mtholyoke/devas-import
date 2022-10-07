@@ -121,7 +121,7 @@ class _BaseProcessor(object):
                         id = self.get_id(filename)
                         if id is not None:
                             data.append((id, os.path.join(root, filename)))
-        return {'.': data} #ALTERED 
+        return {'.': data}
 
     def get_processed_ids(self):
         filename = self.output_prefix + '_meta.npz'

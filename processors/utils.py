@@ -25,6 +25,10 @@ def find_spectrum_files(input_dir, file_ext):
             if '_TI_' not in f.upper() and '_DARK_' not in f.upper()]
 
 
+def get_directory(filepath):
+    return os.path.basename(os.path.dirname(filepath))
+
+
 def get_element_columns(sheet):
     elem_cols = []
     for col, _ in enumerate(sheet.columns, start=1):
