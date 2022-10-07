@@ -122,9 +122,10 @@ class _BaseProcessor(object):
         total_chunks = int(np.ceil(float(len(to_process)) / chunk_size))
         trajectory = issubclass(type(self), _TrajectoryProcessor)
         toc = time()
-        for i, c in enumerate(range(0, len(to_process), chunk_size), start=1):
+        for i, chunk_index in enumerate(range(0, len(to_process), chunk_size), start=1):
             self.logger.info(f'Starting chunk {i} of {total_chunks}')
-            self.process_chunks(to_process, trajectory)
+            file_list = to_process[chunk_index:chunk_index+chunk_size]
+            self.process_chunks(file_list, trajectory)
             tic = time()
             self.logger.debug(f'Chunk {i} done in {tic - toc:0.1f} seconds')
             toc = tic
@@ -203,7 +204,7 @@ class _VectorProcessor(_BaseProcessor):
             dset.resize(n + spectra.shape[0], axis=0)
             dset[n:] = spectra
         else:
-            fh.create_dataset('spectra', data=spectra,
+            fh.create_dataset('spectra', chunks=True, data=spectra,
                               maxshape=(None, self.channels))
         fh.close()
 
