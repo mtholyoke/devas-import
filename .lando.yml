@@ -1,18 +1,13 @@
-name: devas
+name: devas-import
 services:
   appserver:
     type: python:3.7
     build_as_root:
-      - /app/lando/build_as_root.sh
-    build:
-      - /app/lando/build.sh
-    command:
-      - /app/lando/command.sh
-    port: 54321
-proxy:
-  appserver:
-    - devas.lndo.site:54321
+      - /app/.lando/build_as_root.sh
 tooling:
+  process:
+    service: appserver
+    cmd: /app/process_all.py
   python:
     service: appserver
     cmd: /usr/local/bin/python
