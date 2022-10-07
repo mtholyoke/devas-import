@@ -30,7 +30,7 @@ class _BaseProcessor(object):
             if not hasattr(self, attr):
                 raise AttributeError(f'Attribute "{attr}" is required')
         defaults = {
-            'chunk_size': 500,
+            'batch_size': 500,
             'logger': logging.getLogger(),
             'log_dir': 'nightly-logs',
             'output_dir': 'to-DEVAS',
@@ -55,7 +55,7 @@ class _BaseProcessor(object):
             self.logger.info('No new IDs, nothing to do')
             return
         self.metadata = self.parse_metadata()
-        self.process_all(to_process, chunk_size=self.chunk_size)
+        self.process_all(to_process, batch_size=self.batch_size)
         self.logger.info(f'Finished processing for {self.name}')
 
     def construct_paths(self):
@@ -116,22 +116,22 @@ class _BaseProcessor(object):
         meta = np.load(filepath)
         return meta[self.pkey_field]
 
-    def process_all(self, to_process, chunk_size):
-        self.logger.info('Processing %d files in chunks of %d',
-                         len(to_process), chunk_size)
-        total_chunks = int(np.ceil(float(len(to_process)) / chunk_size))
+    def process_all(self, to_process, batch_size):
+        self.logger.info('Processing %d files in batches of %d',
+                         len(to_process), batch_size)
+        total_batches = int(np.ceil(float(len(to_process)) / batch_size))
         trajectory = issubclass(type(self), _TrajectoryProcessor)
         toc = time()
-        for i, chunk_index in enumerate(range(0, len(to_process), chunk_size), start=1):
-            self.logger.info(f'Starting chunk {i} of {total_chunks}')
-            file_list = to_process[chunk_index:chunk_index+chunk_size]
-            self.process_chunks(file_list, trajectory)
+        for i, batch_index in enumerate(range(0, len(to_process), batch_size), start=1):
+            self.logger.info(f'Starting batch {i} of {total_batches}')
+            file_list = to_process[batch_index:batch_index+batch_size]
+            self.process_batches(file_list, trajectory)
             tic = time()
-            self.logger.debug(f'Chunk {i} done in {tic - toc:0.1f} seconds')
+            self.logger.debug(f'Batch {i} done in {tic - toc:0.1f} seconds')
             toc = tic
         return
 
-    def process_chunks(self, to_process, trajectory=False):
+    def process_batches(self, to_process, trajectory=False):
         all_spectra, all_meta = [], []
         for datafile in to_process:
             spectra, meta = self.process_file(datafile)
@@ -144,7 +144,7 @@ class _BaseProcessor(object):
                 all_spectra.append(spectra)
                 all_meta.append(meta)
         if not all_spectra:
-            self.logger.error('No spectra found in chunk')
+            self.logger.error('No spectra found in batch')
             return
         all_meta = self.restructure_meta(all_meta)
         output_suffix = '.hdf5' if self.driver is None else '.%03d.hdf5'
