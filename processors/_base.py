@@ -137,13 +137,13 @@ class _BaseProcessor(object):
         toc = time()
         for i, batch_index in enumerate(range(0, len(to_process), batch_size), start=1):
             file_list = to_process[batch_index]
-            self.process_batches(file_list, trajectory)
+            self.process_batch(file_list, trajectory)
             tic = time()
             self.logger.debug(f'Batch {i} done in {tic - toc:0.1f} seconds')
             toc = tic
         return
 
-    def process_batches(self, to_process, trajectory=False):
+    def process_batch(self, to_process, trajectory=False):
         all_spectra, all_meta = [], []
         for datafile in to_process:
             spectra, meta = self.process_file(datafile)
