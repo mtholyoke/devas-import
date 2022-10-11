@@ -46,17 +46,15 @@ class _BaseProcessor(object):
         processed_ids = set(self.get_processed_ids())
         self.logger.info(f'Found {len(processed_ids)} IDs in existing output')
         input_data = self.get_input_data()
-        print(type(input_data))
-        self.logger.info(f'Found {len([x for batch in input_data.values() for x in batch])} IDs in the data directory') #ALTERED
-        to_process = self.filter_input_data(input_data, processed_ids) #ALTERED
-        for id, filepath in input_data.items():
-            if id not in processed_ids and (id, filepath) not in to_process:
-                to_process[id] = filepath
-        if not to_process:
+        id_count = len([x for batch in input_data.values() for x in batch])
+        dirs = 'directory' if len(self.paths['data']) == 1 else 'directories'
+        self.logger.info(f'Found {id_count} IDs in the data {dirs}')
+        unprocessed = self.filter_input_data(input_data, processed_ids)
+        if not unprocessed:
             self.logger.info('No new IDs, nothing to do')
             return
         self.metadata = self.parse_metadata()
-        self.process_all(to_process, batch_size=self.batch_size)
+        self.process_all(unprocessed)
         self.logger.info(f'Finished processing for {self.name}')
 
     def construct_paths(self):
@@ -88,21 +86,21 @@ class _BaseProcessor(object):
           'output': output,
         }
 
-   
+    # Removes any files we’ve already processed or queued for processing.
     def filter_input_data(self, input_data, processed_ids):
-        to_process = {}
-        for id, filepath in input_data.items():
-            if id not in processed_ids and (id, filepath) not in to_process:
-                to_process[id] = filepath
-        if len(to_process.keys()) == 1 and list(to_process.keys())[0] == '.':
-            self.logger.info('Processing %d files in batches of %d',
-                         len(to_process), self.batch_size)
-            total_batches = int(np.ceil(float(len(to_process)) / self.batch_size))
-            for batch_index in range(0, total_batches):
-                to_process[batch_index] = "batch " + str(batch_index+1) + " of " + str(total_batches)
-        return to_process
+        unprocessed = {}
+        for dirname in input_data:
+            for file in input_data[dirname]:
+                if file[0] in processed_ids:
+                    continue
+                if dirname in unprocessed:
+                    if file in unprocessed[dirname]:
+                        continue
+                else:
+                    unprocessed[dirname] = []
+                unprocessed[dirname].append(file)
+        return unprocessed
 
-    
     # Creates a child log with the root logger’s formatter.
     def get_child_logger(self):
         handler = logging.FileHandler(self.paths['log'])
@@ -118,9 +116,9 @@ class _BaseProcessor(object):
             for root, _, filenames in os.walk(input_dir):
                 for filename in filenames:
                     if filename.lower().endswith(self.file_ext.lower()):
-                        id = self.get_id(filename)
-                        if id is not None:
-                            data.append((id, os.path.join(root, filename)))
+                        file_id = self.get_id(filename)
+                        if file_id is not None:
+                            data.append((file_id, os.path.join(root, filename)))
         return {'.': data}
 
     def get_processed_ids(self):
@@ -132,24 +130,51 @@ class _BaseProcessor(object):
         meta = np.load(filepath)
         return meta[self.pkey_field]
 
-    def process_all(self, to_process, batch_size):
-        trajectory = issubclass(type(self), _TrajectoryProcessor)
+    def is_trajectory(self):
+        return False
+
+    def make_batches(self, unprocessed):
+        data = {}
+        for dirname, files in unprocessed.items():
+            if len(files) > self.batch_size:
+                batches = [files[i:i + self.batch_size]
+                           for i in range(0, len(files), self.batch_size)]
+            else:
+                batches = [files]
+            data[dirname] = batches
+
+        # Label the batches for processing:
+        to_process = {}
+        count = len([b for d in data for b in data[d]])
+        i = 1
+        for dirname, batches in data.items():
+            for batch in batches:
+                label = f'batch {i} of {count}'
+                i += 1
+                if dirname != '.':
+                    label = f'directory {dirname} ({label})'
+                to_process[label] = batch
+        return to_process
+
+    def process_all(self, unprocessed):
+        to_process = self.make_batches(unprocessed)
         toc = time()
-        for i, batch_index in enumerate(range(0, len(to_process), batch_size), start=1):
-            file_list = to_process[batch_index]
-            self.process_batch(file_list, trajectory)
+        for label, batch in to_process.items():
+            file = 'file' if len(batch) == 1 else 'files'
+            self.logger.info(f'Starting {len(batch)} {file} in {label}')
+            self.process_batch(batch)
             tic = time()
-            self.logger.debug(f'Batch {i} done in {tic - toc:0.1f} seconds')
+            self.logger.debug(f'Batch completed in {tic - toc:0.1f} seconds')
             toc = tic
         return
 
-    def process_batch(self, to_process, trajectory=False):
+    def process_batch(self, batch):
         all_spectra, all_meta = [], []
-        for datafile in to_process:
+        for datafile in batch:
             spectra, meta = self.process_file(datafile)
             if spectra is None or meta is None:
                 continue
-            if trajectory and isinstance(spectra, list):
+            if self.is_trajectory() and isinstance(spectra, list):
                 all_spectra.extend(spectra)
                 all_meta.extend(meta)
             else:
@@ -222,6 +247,9 @@ class _VectorProcessor(_BaseProcessor):
 
 
 class _TrajectoryProcessor(_BaseProcessor):
+    def is_trajectory(self):
+        return True
+
     def write_data(self, filepath, all_spectra, all_meta):
         ids = all_meta[self.pkey_field]
         fh = h5py.File(filepath, 'a', driver=self.driver, libver='latest')

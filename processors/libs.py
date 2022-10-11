@@ -35,7 +35,7 @@ class LIBSProcessor(_VectorProcessor):
                 path = utils.get_directory(file)
                 if path not in data:
                     data[path] = []
-                data[path].append((self.get_id(path), path))
+                data[path].append((self.get_id(file), file))
         return data
 
     def parse_metadata(self):
