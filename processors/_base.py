@@ -9,8 +9,10 @@ from time import time, strftime
 
 
 class _BaseProcessor(object):
-    '''
-    Abstract base class. Requires implementations of these methods:
+    """
+    Abstract base class for processing spectrum data.
+
+    Requires implementations of these methods:
     - get_id(filename) returns ID or None
     - parse_metadata() returns parsed metadata structure
     - process_spectra(filename, metadata) return spectra, meta
@@ -20,7 +22,8 @@ class _BaseProcessor(object):
     - driver, either 'family' for distributed or None for single file
     - file_ext, e.g., '.txt'
     - pkey_field
-    '''
+    """
+
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -42,22 +45,35 @@ class _BaseProcessor(object):
         self.construct_paths()
 
     def main(self):
+        """
+        Drives the processing of spectra from input data.
+        """
         self.logger.info(f'Starting processing for {self.name}')
+        # Check output for spectra we have already processed
         processed_ids = set(self.get_processed_ids())
         self.logger.info(f'Found {len(processed_ids)} IDs in existing output')
+        # Scan input data for all possible spectra to process
         input_data = self.get_input_data()
-        id_count = len([x for batch in input_data.values() for x in batch])
+        if not input_data:
+            self.logger.info('No data in input, nothing to do')
+            return
+        id_count = len([file for val in input_data.values() for file in val])
         dirs = 'directory' if len(self.paths['data']) == 1 else 'directories'
         self.logger.info(f'Found {id_count} IDs in the data {dirs}')
+        # Remove previously processed spectra
         unprocessed = self.filter_input_data(input_data, processed_ids)
         if not unprocessed:
             self.logger.info('No new IDs, nothing to do')
             return
+        # Process the spectra
         self.metadata = self.parse_metadata()
         self.process_all(unprocessed)
         self.logger.info(f'Finished processing for {self.name}')
 
     def construct_paths(self):
+        """
+        Identifies input and output directories based on config.
+        """
         root = getattr(self, 'root_dir', '')
         base = os.path.join(root, getattr(self, 'base_dir', ''))
         meta = getattr(self, 'meta_file')
@@ -86,8 +102,14 @@ class _BaseProcessor(object):
           'output': output,
         }
 
-    # Removes any files we’ve already processed or queued for processing.
     def filter_input_data(self, input_data, processed_ids):
+        """
+        Returns a copy of input_data with previously seen files removed.
+
+        Parameter input_data: non-empty result from get_input_data().
+
+        Parameter processed_ids: result from get_processed_ids().
+        """
         unprocessed = {}
         for dirname in input_data:
             for file in input_data[dirname]:
@@ -101,27 +123,41 @@ class _BaseProcessor(object):
                 unprocessed[dirname].append(file)
         return unprocessed
 
-    # Creates a child log with the root logger’s formatter.
     def get_child_logger(self):
+        """
+        Creates a child logger with the root logger’s formatter.
+        """
         handler = logging.FileHandler(self.paths['log'])
         handler.setFormatter(self.logger.handlers[0].formatter)
         logger = self.logger.getChild(self.safe_name)
         logger.addHandler(handler)
         return logger
 
-    # Scans the input data directory and returns tuples (ID, filepath).
+    # This is overridden in LIBSProcessor:
     def get_input_data(self):
-        data = []
+        """
+        Returns a struct of files to consider for processing.
+
+        The outer structure is a dict, with keys being the directory checked
+        for data files and values being lists of tuples of (ID, filename).
+        """
+        data = {}
         for input_dir in self.paths['data']:
+            base = os.path.basename(input_dir)
+            data[base] = []
             for root, _, filenames in os.walk(input_dir):
                 for filename in filenames:
                     if filename.lower().endswith(self.file_ext.lower()):
-                        file_id = self.get_id(filename)
-                        if file_id is not None:
-                            data.append((file_id, os.path.join(root, filename)))
-        return {'.': data}
+                        fid = self.get_id(filename)
+                        if fid is not None:
+                            full_filename = os.path.join(root, filename)
+                            data[base].append((fid, full_filename))
+        return data
 
     def get_processed_ids(self):
+        """
+        Returns a list of the spectra present in previous output.
+        """
         filename = self.output_prefix + '_meta.npz'
         filepath = os.path.join(self.paths['output'], filename)
         self.logger.debug(f'Checking for previous output file {filepath}')
@@ -130,10 +166,14 @@ class _BaseProcessor(object):
         meta = np.load(filepath)
         return meta[self.pkey_field]
 
+    # This is overridden in _TrajectoryProcessor:
     def is_trajectory(self):
         return False
 
     def make_batches(self, unprocessed):
+        """
+        Breaks long lists of input data files into batches for processing.
+        """
         data = {}
         for dirname, files in unprocessed.items():
             if len(files) > self.batch_size:
@@ -190,7 +230,7 @@ class _BaseProcessor(object):
         self.write_data(ouput_filepath, all_spectra, all_meta)
         self.write_metadata(all_meta)
 
-    # This is extended by _VectorProcessor.
+    # This is extended by _VectorProcessor:
     def process_file(self, datafile):
         processed = self.process_spectra(datafile)
         if processed is None or processed[0] is None or processed[1] is None:
@@ -216,10 +256,13 @@ class _BaseProcessor(object):
 
 
 class _VectorProcessor(_BaseProcessor):
-    '''
-    Abstract base class. Requires implementations of these members:
+    """
+    Abstract base class.
+
+    Requires implementations of these members:
     - n_chans e.g., 6144
-    '''
+    """
+
     def process_file(self, datafile):
         spectra, meta = super().process_file(datafile)
         if spectra is None or meta is None:
@@ -247,6 +290,10 @@ class _VectorProcessor(_BaseProcessor):
 
 
 class _TrajectoryProcessor(_BaseProcessor):
+    """
+    Abstract base class.
+    """
+
     def is_trajectory(self):
         return True
 
