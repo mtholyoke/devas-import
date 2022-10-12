@@ -113,7 +113,7 @@ class _BaseProcessor(object):
         unprocessed = {}
         for dirname in input_data:
             for file in input_data[dirname]:
-                if file[0] in processed_ids:
+                if file[0].encode('utf-8') in processed_ids:
                     continue
                 if dirname in unprocessed:
                     if file in unprocessed[dirname]:
@@ -168,6 +168,10 @@ class _BaseProcessor(object):
 
     # This is overridden in _TrajectoryProcessor:
     def is_trajectory(self):
+        """
+        Returns a boolean marking it as a trajectory or not
+        (always returns false by default). 
+        """
         return False
 
     def make_batches(self, unprocessed):
@@ -197,6 +201,14 @@ class _BaseProcessor(object):
         return to_process
 
     def process_all(self, unprocessed):
+        """
+        Prints messages that show how long each batch has taken to complete
+        along with when the batch starts. Create the exact batches to be
+        processed by process_batch.  
+
+        Parameter unprocessed: a struct of files without files that have
+        already been seen.
+        """
         to_process = self.make_batches(unprocessed)
         toc = time()
         for label, batch in to_process.items():
@@ -209,6 +221,13 @@ class _BaseProcessor(object):
         return
 
     def process_batch(self, batch):
+        """
+        Takes each file in a batch and creates or appends data
+        to an hdf5 file.
+
+        Parameter batch: a list of tuples representing files within
+        directories to be processed.
+        """
         all_spectra, all_meta = [], []
         for datafile in batch:
             spectra, meta = self.process_file(datafile)
@@ -232,6 +251,14 @@ class _BaseProcessor(object):
 
     # This is extended by _VectorProcessor:
     def process_file(self, datafile):
+        """
+        Returns a processed single file from a batch using process_spectra,
+        and prints errors if the file or its first two indeces are
+        missing. 
+
+        Parameter datafile: a single tuple representing a file.
+        (? I'm fairly certain this is right) 
+        """
         processed = self.process_spectra(datafile)
         if processed is None or processed[0] is None or processed[1] is None:
             self.logger.warn(f'Problem processing {datafile[1]}')
@@ -239,6 +266,10 @@ class _BaseProcessor(object):
         return processed
 
     def restructure_meta(self, all_meta):
+        """
+
+        Parameter all_meta:
+        """
         if isinstance(all_meta[0][self.pkey_field], (list, np.ndarray)):
             return dict((k, np.concatenate([m[k] for m in all_meta]))
                         for k in all_meta[0].keys())
@@ -246,6 +277,10 @@ class _BaseProcessor(object):
                     for k in all_meta[0].keys())
 
     def write_metadata(self, all_meta):
+        """
+
+        Parameter all_meta:
+        """
         filename = self.output_prefix + '_meta.npz'
         filepath = os.path.join(self.paths['output'], filename)
         if os.path.exists(filepath):
