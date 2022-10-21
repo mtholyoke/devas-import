@@ -329,7 +329,8 @@ class _VectorProcessor(_BaseProcessor):
 
         Parameter all_spectra: data to write.
 
-        Parameter all_meta: metadata about spectra.
+        Parameter all_meta: metadata about spectra. Unused in Vector output
+        but we need it in the API for Trajectory output.
         """
         spectra = np.vstack(all_spectra)
         fh = h5py.File(filepath, 'a', driver=self.driver, libver='latest')
