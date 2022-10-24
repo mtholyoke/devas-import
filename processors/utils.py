@@ -55,6 +55,8 @@ META_FIELDS = ['Carousel', 'Sample', 'Target', 'Location', 'Atmosphere',
 
 
 def load_spectra(filepath, channels=None):
+    # TODO: One draft included `encoding='latin1'` in the following.
+    # Should be 'latin-1' if we need it, or delete this comment if not.
     with open(filepath, 'r') as f:
         contents = list(csv.reader(f, quotechar='+'))
     meta = {}
