@@ -51,7 +51,29 @@ rsync -av $SUPERLIBS_DIR/to-DEVAS/MHC_5120/ $NEMO_ROOT/SuperLIBS/MHC_5120/ >> $S
 echo "### $(date) - finished rsync" >> $SUPERLIBS_LOG
 echo "Finished SuperLIBS 5120"
 
+echo "Starting SuperLIBS 10K"
+# SUPERLIBS_DIR=$DATA_ROOT/MHC.SuperLIBS/SAMPLE_RUNS
+SUPERLIBS_LOG=$SUPERLIBS_DIR/nightly-logs/MHC_10K-$TODAY.log
+echo "### $(date) - starting processing" > $SUPERLIBS_LOG
+python2.7 $SCRIPT_ROOT/process_superlibs_10k_files.py -i $SUPERLIBS_DIR/PREPROCESSED_NO_BLR/MHC_SuperLIBS_10K -o $SUPERLIBS_DIR/to-DEVAS/MHC_10K/prepro_no_blr -m $CHEMLIBS_DIR/COMPOSITIONS/Millennium_COMPS.xlsx >> $SUPERLIBS_LOG 2>&1
+echo "### $(date) - finished processing, starting rsync" >> $SUPERLIBS_LOG
+rsync -av $SUPERLIBS_DIR/to-DEVAS/MHC_10K/ $NEMO_ROOT/SuperLIBS/MHC_10K/ >> $SUPERLIBS_LOG 2>&1
+echo "### $(date) - finished rsync" >> $SUPERLIBS_LOG
+echo "Finished SuperLIBS 10K"
+
+echo "Starting SuperLIBS 18K"
+# SUPERLIBS_DIR=$DATA_ROOT/MHC.SuperLIBS/SAMPLE_RUNS
+SUPERLIBS_LOG=$SUPERLIBS_DIR/nightly-logs/MHC_18K-$TODAY.log
+echo "### $(date) - starting processing" > $SUPERLIBS_LOG
+python2.7 $SCRIPT_ROOT/process_superlibs_18k_files.py -i $SUPERLIBS_DIR/PREPROCESSED_NO_BLR/MHC_SuperLIBS_18K -o $SUPERLIBS_DIR/to-DEVAS/MHC_18K/prepro_no_blr -m $CHEMLIBS_DIR/COMPOSITIONS/Millennium_COMPS.xlsx >> $SUPERLIBS_LOG 2>&1
+echo "### $(date) - finished processing, starting rsync" >> $SUPERLIBS_LOG
+rsync -av $SUPERLIBS_DIR/to-DEVAS/MHC_18K/ $NEMO_ROOT/SuperLIBS/MHC_18K/ >> $SUPERLIBS_LOG 2>&1
+echo "### $(date) - finished rsync" >> $SUPERLIBS_LOG
+echo "Finished SuperLIBS 18K"
+
+source mirror_pds.sh
+
 echo "Server refresh:"
 echo "$(wget -O- --method=POST http://nemo.p/nightly-refresh 2>&1)"
 
-echo "Finished running all MHC datasets"
+echo "Finished running all datasets"
