@@ -47,6 +47,7 @@ class _BaseImporter(object):
             metadata = self.parse_masterfile(args.master)
         self.process_data(new_files, metadata, args.output_prefix)
 
+
     def get_directory_data(self, *input_dirs):
         ids, files = [], []
         for input_dir in input_dirs:

@@ -5,7 +5,7 @@
 root_dir: /mnt/mars/mdyar
 
 # How many data files to process in each batch (default 500).
-# chunk_size: 500
+# batch_size: 500
 
 # The list of datasets to be run by process_all.py.
 # If base_dir does not start with /, it is appended to root_dir.

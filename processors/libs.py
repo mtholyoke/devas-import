@@ -26,11 +26,17 @@ class LIBSProcessor(_VectorProcessor):
         return utils.get_spectrum_id(filename)
 
     def get_input_data(self):
-        filepaths = []
+        data = {}
         for dd in self.paths['data']:
-            filepaths.extend(utils.find_spectrum_files(dd, self.file_ext))
-        return [(self.get_id(path), path)
-                for path in filepaths if self.get_id(path)]
+            files = utils.find_spectrum_files(dd, self.file_ext)
+            for file in files:
+                if not self.get_id(file):
+                    continue
+                path = utils.get_directory(file)
+                if path not in data:
+                    data[path] = []
+                data[path].append((self.get_id(file), file))
+        return data
 
     def parse_metadata(self):
         self.logger.debug('Parsing metadata')
