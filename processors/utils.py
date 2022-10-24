@@ -25,6 +25,10 @@ def find_spectrum_files(input_dir, file_ext):
             if '_TI_' not in f.upper() and '_DARK_' not in f.upper()]
 
 
+def get_directory(filepath):
+    return os.path.basename(os.path.dirname(filepath))
+
+
 def get_element_columns(sheet):
     elem_cols = []
     for col, _ in enumerate(sheet.columns, start=1):
@@ -51,6 +55,8 @@ META_FIELDS = ['Carousel', 'Sample', 'Target', 'Location', 'Atmosphere',
 
 
 def load_spectra(filepath, channels=None):
+    # TODO: One draft included `encoding='latin1'` in the following.
+    # Should be 'latin-1' if we need it, or delete this comment if not.
     with open(filepath, 'r') as f:
         contents = list(csv.reader(f, quotechar='+'))
     meta = {}

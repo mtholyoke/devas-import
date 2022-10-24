@@ -1,5 +1,6 @@
 from __future__ import print_function
 import numpy as np
+import os
 
 from importer import _TrajImporter
 from _mhc_utils import (
@@ -22,6 +23,15 @@ class SuperLIBSImporter(_TrajImporter):
 
     def _get_id(self, fpath):
         return mhc_spectrum_id(fpath)
+
+    def get_processed_ids(self, file_prefix):
+        fname = file_prefix + '_meta.npz'
+        if not os.path.isfile(fname):
+            return []
+        meta = np.load(fname)
+        keys = meta[self.pkey_field]
+        save = list(set([key.split(':')[0] for key in keys]))
+        return save
 
     def parse_masterfile(self, filename):
         return parse_mhc_masterfile(filename)

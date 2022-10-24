@@ -10,16 +10,21 @@ CCS_DATA_DIR=$MSL_DIR/ccs_data
 CCS_PREFIX=$CCS_DATA_DIR/ccs
 CCS_ORIGINALS=$CCS_DATA_DIR/original
 
+TODAY=$(date "+%Y-%m-%d")
+NEMO_ROOT=cj@nemo.mtholyoke.edu:/home/cj/datafiles
+MSL_LOG=$MSL_DIR/nightly-logs/msl-$TODAY.log
+
 # Download Masterfile, processed spectra, & MOC predictions
+echo "Running MSL-PDS dataset"
 starttime=$(date +%s)
-echo "$starttime: Starting MSL data downloads..."
+echo "### $(date) - Starting MSL data downloads" > MSL_LOG
 /usr/bin/lftp $REMOTE_PREPROCESSED <<EOF
  get -c document/$MASTER_FILE  -o $CCS_DATA_DIR/$MASTER_FILE
  mirror -c -I 'cl5_*ccs_*.csv' --no-empty-dirs data $CCS_ORIGINALS
 EOF
 endtime=$(date +%s)
-echo "$endtime: Download finished after $((endtime - starttime)) seconds."
+echo "### $(date) - Download finished after $((endtime - starttime)) seconds, starting processing." >> MSL_LOG
 
 # Add the new CCS files to the server-readable data
 python2.7 process_msl_files.py -o $CCS_PREFIX -i $CCS_ORIGINALS -m $CCS_DATA_DIR/$MASTER_FILE
-echo "$(date +%s): Added new CCS files to ${CCS_PREFIX}.xxx.hdf5"
+echo "### $(date +%s): Added new CCS files to ${CCS_PREFIX}.xxx.hdf5"

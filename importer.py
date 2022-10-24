@@ -47,6 +47,7 @@ class _BaseImporter(object):
             metadata = self.parse_masterfile(args.master)
         self.process_data(new_files, metadata, args.output_prefix)
 
+
     def get_directory_data(self, *input_dirs):
         ids, files = [], []
         for input_dir in input_dirs:
@@ -152,7 +153,8 @@ class _TrajImporter(_BaseImporter):
         for ID, spectrum in zip(ids, spectra):
             path = '/spectra/%s' % ID
             if path in fh:
-                print('WARNING: Overwriting previous entry in', path)
+                if np.array_equal(fh[path][:], spectrum):
+                    print('WARNING: Overwriting previous entry in', path)
                 del fh[path]
             fh.create_dataset(path, data=spectrum)
         fh.close()
