@@ -84,6 +84,9 @@ def load_spectra(filepath, channels=None):
             break
     if meta['Sample'].lower() in ('ti', 'dark'):
         return
+    # SuperLIBS 10K has a typo in the metadata:
+    if meta['Sample'] == 'AGVIA':
+        meta['Sample'] = 'AGV1A'
     try:
         data = np.array(contents[i:], dtype=float)
     except Exception as e:
