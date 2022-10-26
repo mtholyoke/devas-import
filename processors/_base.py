@@ -113,7 +113,7 @@ class _BaseProcessor(object):
         unprocessed = {}
         for dirname in input_data:
             for file in input_data[dirname]:
-                if file[0].encode('utf-8') in processed_ids:
+                if file[0] in processed_ids:
                     continue
                 if dirname in unprocessed:
                     if file in unprocessed[dirname]:
@@ -164,7 +164,8 @@ class _BaseProcessor(object):
         if not os.path.isfile(filepath):
             return []
         meta = np.load(filepath)
-        return meta[self.pkey_field]
+        ids = meta[self.pkey_field]
+        return [x.decode() if isinstance(x, bytes) else x for x in ids]
 
     # This is overridden in _TrajectoryProcessor:
     def is_trajectory(self):

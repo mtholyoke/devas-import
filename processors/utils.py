@@ -45,6 +45,7 @@ def get_element_columns(sheet):
 # Truncates "_spect.csv" from the filename to get the ID.
 def get_spectrum_id(filename):
     name, _ = os.path.splitext(os.path.basename(filename))
+    name = name.decode() if isinstance(name, bytes)
     if not name.endswith('_spect') or len(name) < 7:
         return None
     return name[:-6]
@@ -63,6 +64,8 @@ def load_spectra(filepath, channels=None):
     prepro = True
     # Spectra are assumed to start at first line of comma-separated data
     for i, line in enumerate(contents):
+        if isinstance(line, bytes):
+            line = line.decode()
         if line and ':' in line[0]:
             field = line[0].split(':')[0]
             val = line[0].split(':')[1].strip()
