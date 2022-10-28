@@ -45,7 +45,7 @@ def get_element_columns(sheet):
 # Truncates "_spect.csv" from the filename to get the ID.
 def get_spectrum_id(filename):
     name, _ = os.path.splitext(os.path.basename(filename))
-    name = name.decode() if isinstance(name, bytes)
+    name = name.decode() if isinstance(name, bytes) else name
     if not name.endswith('_spect') or len(name) < 7:
         return None
     return name[:-6]

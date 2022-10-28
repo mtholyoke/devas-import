@@ -6,6 +6,21 @@ from ._base import _VectorProcessor
 
 
 class LIBSProcessor(_VectorProcessor):
+    """
+    Inherits from _base.py
+    Processes spectra data from LIBS (i.e, ChemLIBS and SuperLIBS)
+
+    Implements these methods required by _base.py:
+    - get_id(filename) returns ID or None
+    - parse_metadata() returns parsed metadata structure
+    - process_spectra(filename, metadata) return spectra, meta
+
+    Implements these members required by _base.py:
+    - driver: family by default
+    - file_ext: '_spect.csv' by default
+    - pkey_field: 'Name' by default
+
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.logger = self.get_child_logger()
@@ -23,9 +38,17 @@ class LIBSProcessor(_VectorProcessor):
                 setattr(self, key, value)
 
     def get_id(self, filename):
+        """
+        Returns a string representing the name of an individual spectra file
+        without the spectra.csv suffix.
+        Parameters filename: the path to a spectra file
+        """
         return utils.get_spectrum_id(filename)
 
     def get_input_data(self):
+        """
+        Returns a dictionary of files in a directory.
+        """
         data = {}
         for dd in self.paths['data']:
             files = utils.find_spectrum_files(dd, self.file_ext)
@@ -39,10 +62,20 @@ class LIBSProcessor(_VectorProcessor):
         return data
 
     def parse_metadata(self):
+        """
+        Returns data from Millennium_comps file. 
+        """
         self.logger.debug('Parsing metadata')
         return utils.parse_millennium_comps(self.paths['metadata'][0])
 
     def prepare_meta(self, meta, shot_num, name):
+        """
+        Returns a dictionary of strings corresponding to metadata fields
+
+        Parameter meta: the metadata contents of a spectra file
+        Parameter shot_num: an numpy array
+        Parameter name: the name of a spectra file
+        """
         all_samps, all_comps, all_noncomps = self.metadata
         elements = sorted(all_comps.keys())
         sample = meta['Sample'].lower()
@@ -82,6 +115,12 @@ class LIBSProcessor(_VectorProcessor):
         return dict(zip(meta_fields, metas))
 
     def process_spectra(self, datafile):
+        """
+        Returns a processed single file from a batch of file, 
+        including data and metadata
+
+        Parameter datafile: a single tuple representing a file
+        """
         result = utils.load_spectra(datafile[1], self.channels)
         if not result:
             return
