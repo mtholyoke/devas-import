@@ -9,6 +9,11 @@ from glob import glob
 
 
 def can_be_float(string):
+    """
+    Returns a boolean reflecting whether the string can be a float
+
+    Parameter string: a string to be tested to see if it can be a float
+    """
     try:
         float(string)
     except Exception:
@@ -16,20 +21,36 @@ def can_be_float(string):
     else:
         return True
 
-
-# Scan the data directory for *_spect.csv files.
-# Note: this requires the files be in 1 level of subdirectory.
 def find_spectrum_files(input_dir, file_ext):
+    """
+    Scans the data directory for particular file type and return a list of those files.
+    Used to scan for *_spect.csv
+
+    Requires these conditions: 
+        -files must be in 1 level of subdirectory
+
+    Parameter input_dir: the directory to scan through
+    Parameter file_ext: the file extension to be searched for
+    """
     fpattern = os.path.join(input_dir, '*', f'*{file_ext}')
     return [f for f in glob(fpattern)
             if '_TI_' not in f.upper() and '_DARK_' not in f.upper()]
 
 
 def get_directory(filepath):
+    """
+    Returns the name of the directory the file is in
+
+    Parameter filepath: the full path of a file
+    """
     return os.path.basename(os.path.dirname(filepath))
 
 
 def get_element_columns(sheet):
+    """
+    Returns an array of elements from the sheet
+    Parameter sheet: a representation of data within an xlsx doc, like Millennium_COMPS
+    """
     elem_cols = []
     for col, _ in enumerate(sheet.columns, start=1):
         check = sheet.cell(row=1, column=col).value
@@ -39,11 +60,16 @@ def get_element_columns(sheet):
         if not name:
             raise ValueError('Bad name for checked column %d' % col)
         elem_cols.append(('e_' + name, col))
+    print(elem_cols)
     return elem_cols
 
 
 # Truncates "_spect.csv" from the filename to get the ID.
 def get_spectrum_id(filename):
+    """
+    Returns: the name of the file, minus the '_spect.csv' ending
+    Parameter: a string representing the full name of the file
+    """
     name, _ = os.path.splitext(os.path.basename(filename))
     name = name.decode() if isinstance(name, bytes) else name
     if not name.endswith('_spect') or len(name) < 7:
@@ -56,8 +82,11 @@ META_FIELDS = ['Carousel', 'Sample', 'Target', 'Location', 'Atmosphere',
 
 
 def load_spectra(filepath, channels=None):
-    # TODO: One draft included `encoding='latin1'` in the following.
-    # Should be 'latin-1' if we need it, or delete this comment if not.
+    """
+    Returns information about the filepath spectra.csv file
+    Parameter filepath: the full path of a spectra.csv file
+    Parameter channels: empty
+    """
     with open(filepath, 'r') as f:
         contents = list(csv.reader(f, quotechar='+'))
     meta = {}
@@ -101,6 +130,10 @@ def load_spectra(filepath, channels=None):
 
 
 def parse_millennium_comps(filepath):
+    """
+    Returns arrays of the contents of the filepath file (Millennium_COMPS)
+    Parameter filepath: the full path of a file
+    """
     book = openpyxl.load_workbook(filepath, data_only=True)
     sheet = book.active
     elem_cols = get_element_columns(sheet)
