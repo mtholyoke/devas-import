@@ -4,6 +4,8 @@ services:
     type: python:3.7
     build_as_root:
       - /app/.lando/build_as_root.sh
+    build:
+      - /app/.lando/build.sh
 tooling:
   process:
     service: appserver

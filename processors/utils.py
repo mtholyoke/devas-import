@@ -6,6 +6,8 @@ import openpyxl
 import os
 from collections import defaultdict
 from glob import glob
+from openpyxl import load_workbook
+from time import time
 
 
 def can_be_float(string):
@@ -163,3 +165,30 @@ def parse_millennium_comps(filepath):
                 compositions[elem].append(np.nan)
     noncomps = [rock_types, randoms, matrices, dopants, projects]
     return samples, compositions, noncomps
+
+def parse_masterfile(cfile, superman_fields):
+    """
+    For use in mossbauer.py
+    """
+    print('Loading masterfile...')
+    start = time()
+    book = load_workbook(cfile, data_only=True)
+    sheet = book.active
+    for row in sheet.iter_rows(min_row=1, max_row=1):
+        headers = [cell.value for cell in row]
+    meta = defaultdict(list)
+    #replaced self.pkey_fields with next(iter(superman_fields) to get
+    #1st element
+    id_ind = headers == next(iter(superman_fields))
+    for i, row in enumerate(sheet.rows):
+        if i < 1 or row[id_ind].value is None:
+            continue
+        for header, cell in zip(headers, row):
+            if header in superman_fields:
+                if header == 'Dana Group' and not cell.value:
+                    cell.value = 'n/a'
+                meta[header].append(cell.value)
+    print('  done. %.2fs' % (time() - start))
+    return meta
+
+
