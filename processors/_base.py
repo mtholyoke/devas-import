@@ -242,12 +242,12 @@ class _BaseProcessor(object):
                 continue
             #leave in to make sure we don't need it any more 
             #(doesn't appear to break ChemLIBS, yay!!)
-            #if self.is_trajectory() and isinstance(spectra, list):
-                #all_spectra.extend(spectra)
-                #all_meta.extend(meta)
-            #else:
-            all_spectra.append(spectra)
-            all_meta.append(meta)
+            if self.is_trajectory() and isinstance(spectra, list):
+                all_spectra.extend(spectra)
+                all_meta.extend(meta)
+            else:
+                all_spectra.append(spectra)
+                all_meta.append(meta)
         if not all_spectra:
             self.logger.error('No spectra found in batch')
             return

@@ -7,6 +7,7 @@ import yaml
 from argparse import ArgumentParser
 from processors import LIBSProcessor
 from processors import MossbauerImporter 
+from processors import RamanImporter
 
 
 
@@ -44,6 +45,7 @@ if __name__ == '__main__':
     processor = {
         'LIBS': LIBSProcessor,
         'Mossbauer' : MossbauerImporter,
+        'Raman' : RamanImporter,
     }
 
     for dataset in config['datasets']:

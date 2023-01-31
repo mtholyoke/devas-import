@@ -5,18 +5,18 @@ from ._base import _TrajectoryProcessor
 
 class MossbauerImporter(_TrajectoryProcessor):
     """
-    Inherits from importer.py
+    Inherits from base.py
     Processes spectra data from Mossbauer
 
-    Implements these methods required by importer.py:
+    Implements these methods required by _base.py:
     - get_id(filename) returns ID or None
+    - parse_metadata() returns parsed metadata structure
     - process_spectra(filename, metadata) return spectra, meta
 
     Implements these members required by _base.py:
     - driver: None by default
     - file_ext: '_.txt' by default
     - pkey_field: 'Sample #' by default
-
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

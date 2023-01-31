@@ -166,10 +166,14 @@ def parse_millennium_comps(filepath):
     noncomps = [rock_types, randoms, matrices, dopants, projects]
     return samples, compositions, noncomps
 
-def parse_masterfile(cfile, superman_fields):
+def parse_masterfile(cfile, fields):
     """
-    For use in mossbauer.py
+    For use in mossbauer.py and raman.py
+    Parameter fields: list of superman_fields if mossbauer, pkey_field if raman
+    Parameter cfile: the masterfile itself
     """
+    #check if it's raman
+    isMossbauer = fields != 'spectrum_number'
     print('Loading masterfile...')
     start = time()
     book = load_workbook(cfile, data_only=True)
@@ -179,15 +183,30 @@ def parse_masterfile(cfile, superman_fields):
     meta = defaultdict(list)
     #replaced self.pkey_fields with next(iter(superman_fields) to get
     #1st element
-    id_ind = headers == next(iter(superman_fields))
+    #changed to fields to account for raman
+    if isMossbauer:
+        id_ind = headers == next(iter(fields))
+    #for raman, kept pkey_fields
+    else:
+        id_ind = headers==fields
     for i, row in enumerate(sheet.rows):
         if i < 1 or row[id_ind].value is None:
             continue
-        for header, cell in zip(headers, row):
-            if header in superman_fields:
-                if header == 'Dana Group' and not cell.value:
-                    cell.value = 'n/a'
-                meta[header].append(cell.value)
+        #if it's a mossbauer file
+        if isMossbauer:
+            for header, cell in zip(headers, row):
+                if header in fields:
+                    if header == 'Dana Group' and not cell.value:
+                        cell.value = 'n/a'
+                    meta[header].append(cell.value)
+        else: #if it's a raman file
+            row[0].value = int(str(row[0].value).split('_')[0])
+            for header, cell in zip(headers, row):
+                if header == 'spectrum_number':
+                    if cell.value in meta[header]:
+                        print('Duplicate value: ', cell.value)
+                if header is not None:
+                    meta[header].append(cell.value)
     print('  done. %.2fs' % (time() - start))
     return meta
 
