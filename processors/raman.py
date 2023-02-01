@@ -17,6 +17,9 @@ class RamanImporter(_TrajectoryProcessor):
     - driver: None by default
     - file_ext: '.txt' by default
     - pkey_field: 'spectrum_number' by default
+
+    meta: a dictionary to hold metadata
+    logger: for logging errors
     """
     def __init__(self, **kwargs):
         self.meta = {}
