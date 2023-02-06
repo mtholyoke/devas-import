@@ -132,7 +132,7 @@ class _BaseProcessor(object):
         logger = self.logger.getChild(self.safe_name)
         logger.addHandler(handler)
         return logger
-
+    
     # This is overridden in LIBSProcessor:
     def get_input_data(self):
         """
@@ -171,6 +171,12 @@ class _BaseProcessor(object):
     def is_trajectory(self):
         """
         Returns a boolean whether the spectrum data is trajectory format.
+        """
+        return False
+
+    def is_raman(self):
+        """
+        Returns a boolean if running Raman. Overriden in raman.py
         """
         return False
 
@@ -242,7 +248,8 @@ class _BaseProcessor(object):
                 continue
             #leave in to make sure we don't need it any more 
             #(doesn't appear to break ChemLIBS, yay!!)
-            if self.is_trajectory() and isinstance(spectra, list):
+            #okay: raman needs extend, everything else seems to need append
+            if self.is_raman() and isinstance(spectra, list):
                 all_spectra.extend(spectra)
                 all_meta.extend(meta)
             else:

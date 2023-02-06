@@ -40,7 +40,7 @@ class LIBSProcessor(_VectorProcessor):
     def get_id(self, filename):
         """
         Returns a string representing the name of an individual spectra file
-        without the spectra.csv suffix.
+        without the spect.csv suffix.
         Parameters filename: the path to a spectra file
         """
         return utils.get_spectrum_id(filename)
@@ -100,6 +100,20 @@ class LIBSProcessor(_VectorProcessor):
             if all_noncomps[4][ind]:
                 projects = all_noncomps[4][ind].upper()
                 projects = projects.translate({ord(c): None for c in ' ;'})
+
+        
+        optional_metas = ['Carousel', 'Target', 'Location', 'DistToTarget']
+        not_present = [i for i in optional_metas if i not in meta.keys()]
+        if 'Carousel' in not_present:
+            meta['Carousel'] = 0
+        if 'Target' in not_present:
+            meta['Target'] = 0
+        if 'Location' in not_present:
+            meta['Location'] = 0
+        if 'DistToTarget' in not_present:
+            meta['DistToTarget'] = 300
+
+        #hypothetically: for each of arrays in np.broadcast_arrays..., don't include if it's None
         metas = np.broadcast_arrays(shot_num, int(meta['Carousel']),
                                     meta['Sample'], int(meta['Target']),
                                     int(meta['Location']), meta['Atmosphere'],
@@ -107,6 +121,7 @@ class LIBSProcessor(_VectorProcessor):
                                     float(meta['DistToTarget']), meta['Date'],
                                     projects, name, rock_type, int(random_no),
                                     matrix, float(dopant), *comps)
+
         meta_fields = [
             'Number', 'Carousel', 'Sample', 'Target', 'Location', 'Atmosphere',
             'LaserAttenuation', 'DistToTarget', 'Date', 'Projects', 'Name',
@@ -137,5 +152,5 @@ class LIBSProcessor(_VectorProcessor):
             spectra = spectra[1:]
         spectra = np.vstack((spectra.mean(0), spectra))
         shot_num = np.arange(spectra.shape[0])
-        meta = self.prepare_meta(meta, shot_num, name=datafile[0])
+        meta = self.prepare_meta(meta, shot_num, name=datafile[0]) 
         return spectra, meta

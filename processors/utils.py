@@ -62,7 +62,6 @@ def get_element_columns(sheet):
         if not name:
             raise ValueError('Bad name for checked column %d' % col)
         elem_cols.append(('e_' + name, col))
-    print(elem_cols)
     return elem_cols
 
 

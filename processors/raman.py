@@ -49,6 +49,12 @@ class RamanImporter(_TrajectoryProcessor):
         #this way both formats of datafile should work 
         if '/' in datafile: datafile = datafile[datafile.rfind('/')+1:]
         return int(str(datafile.rstrip(self.file_ext)).split('_')[0])
+    
+    def is_raman(self):
+        """
+        Overrides base.py to say it is raman
+        """
+        return True
         
 
     def parse_metadata(self):
@@ -76,8 +82,6 @@ class RamanImporter(_TrajectoryProcessor):
         
         #switched to datafile[1] for path
         spectra = np.genfromtxt(datafile[1], delimiter=',')
-        print("process_spectra test #0")
-        print(spectra)
         if spectra.ndim != 2 or spectra.shape[1] != 2:
             raise ValueError('Spectra must be a trajectory')
 
