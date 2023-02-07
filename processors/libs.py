@@ -113,7 +113,9 @@ class LIBSProcessor(_VectorProcessor):
         if 'DistToTarget' in not_present:
             meta['DistToTarget'] = 300
 
-        #hypothetically: for each of arrays in np.broadcast_arrays..., don't include if it's None
+        to_clean = optional_metas + ['LaserAttenuation']
+        for i in to_clean: meta[i] = utils.clean_data(meta[i], i)
+
         metas = np.broadcast_arrays(shot_num, int(meta['Carousel']),
                                     meta['Sample'], int(meta['Target']),
                                     int(meta['Location']), meta['Atmosphere'],
@@ -127,6 +129,7 @@ class LIBSProcessor(_VectorProcessor):
             'LaserAttenuation', 'DistToTarget', 'Date', 'Projects', 'Name',
             'TASRockType', 'RandomNumber', 'Matrix', 'ApproxDopantConc'
         ] + elements
+
         return dict(zip(meta_fields, metas))
 
     def process_spectra(self, datafile):

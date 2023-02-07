@@ -23,6 +23,25 @@ def can_be_float(string):
     else:
         return True
 
+def clean_data(string, type):
+    """
+    Returns the string sans anything that isn't a digit or '-', or '.' in the
+    case of floats-to-be. 
+
+    Parameter string: from dictionary of meta, a metadata value that should 
+    be an int or float.
+    Parameter type: which category of metadata the string is from 
+    """
+    characters = [str(x) for x in range(0,9)] + ['-', '.']
+    for ch in string: 
+        if ch not in characters: string = string.replace(ch, "")
+    
+    if type == "LaserAttenuation" or type == "DistToTarget": return string
+    else: string = string.replace('.', "")
+    
+    return string
+
+
 def find_spectrum_files(input_dir, file_ext):
     """
     Scans the data directory for particular file type and return a list of those files.
