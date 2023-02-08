@@ -53,6 +53,7 @@ class MossbauerImporter(_TrajectoryProcessor):
     def parse_metadata(self):
         """
         Returns data from metadata file. 
+        
         The function that this calls in utils is lifted directly from
         its equivalent function in process_mossbauer_files.py
         """
@@ -63,6 +64,7 @@ class MossbauerImporter(_TrajectoryProcessor):
     def process_metadata(self, metadata, filename):
         """
         Returns the metadata of a file
+
         Parameters: 
         filename, the name of a file in string format that still contains 
         an extension

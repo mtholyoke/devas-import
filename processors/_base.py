@@ -246,9 +246,6 @@ class _BaseProcessor(object):
             spectra, meta = self.process_file(datafile)
             if spectra is None or meta is None:
                 continue
-            #leave in to make sure we don't need it any more 
-            #(doesn't appear to break ChemLIBS, yay!!)
-            #okay: raman needs extend, everything else seems to need append
             if self.is_raman() and isinstance(spectra, list):
                 all_spectra.extend(spectra)
                 all_meta.extend(meta)
@@ -256,7 +253,7 @@ class _BaseProcessor(object):
                 all_spectra.append(spectra)
                 all_meta.append(meta)
         if not all_spectra:
-            self.logger.error('No spectra found in batch')
+            self.logger.debug('No spectra found in batch')
             return
         all_meta = self.restructure_meta(all_meta)
         output_suffix = '.hdf5' if self.driver is None else '.%03d.hdf5'
@@ -270,14 +267,12 @@ class _BaseProcessor(object):
         """
         Returns a processed single file from a batch.
 
-        Prints errors if the file or its first two indices are
-        missing.
+        Gives warning if the file, its spectra, or metadata does not exist
 
         Parameter datafile: a single tuple representing a file.
         """
         processed = self.process_spectra(datafile)
         if processed is None or processed[0] is None or processed[1] is None:
-            self.logger.warn(f'Problem processing {datafile[1]}')
             return None, None
         return processed
 
@@ -327,7 +322,7 @@ class _VectorProcessor(_BaseProcessor):
         n_meta = len(pkeys) if isinstance(pkeys, (list, np.ndarray)) else 1
         n_spectra = 1 if spectra.ndim == 1 else spectra.shape[0]
         if n_spectra != n_meta:
-            self.logger.warn(f'Unexpected number of shots in {filepath[1]}')
+            self.logger.warn(f'Unexpected number of shots in {datafile[1]}')
             return None, None
         return spectra, meta
 
