@@ -29,11 +29,9 @@ for name, meta in metadata.items():
 		out.write(f"Date: {date}\n")
 		out.write(f"Carousel: {meta['Carousel#']}\n")
 		out.write(f"Sample: {meta['Pellet Name']}\n")
-		out.write('Target: 1\n')
-		out.write('Location: 1\n')
 		out.write(f"Atmosphere: {dataset}\n")
-		out.write(f"LaserAttenuation: {float(meta['Laser Power'][:-1])}\n")
-		out.write('DistToTarget: 300.0\n')
+		out.write(f"LaserAttenuation: {meta['Laser Power'][:-1]}\n")
+		out.write('DistToTarget: 300\n')
 		out.write('wave, mean\n')
 		for i, data in enumerate(spectra[name]):
 			out.write(f"{spectra['wave'][i]},{data}\n")

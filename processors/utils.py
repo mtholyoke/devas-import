@@ -23,23 +23,26 @@ def can_be_float(string):
     else:
         return True
 
-def clean_data(string, type):
-    """
-    Returns the string sans anything that isn't a digit or '-', or '.' in the
-    case of floats-to-be. 
 
-    Parameter string: from dictionary of meta, a metadata value that should 
-    be an int or float.
-    Parameter type: which category of metadata the string is from 
+def clean_data(string, cast=int, default=0):
     """
-    characters = [str(x) for x in range(0,9)] + ['-', '.']
-    for ch in string: 
-        if ch not in characters: string = string.replace(ch, "")
-    
-    if type == "LaserAttenuation" or type == "DistToTarget": return string
-    else: string = string.replace('.', "")
-    
-    return string
+    Strips non-numeric characters from the string and returns the
+    resulting string cast to the specified numeric type.
+
+    Parameter string: from dictionary of meta, a metadata value that
+    should be an int or float.
+    Parameter cast: what numeric type (int or float) to return
+    Parameter default: default value if string is empty after cleanup
+    """
+    charset = [str(x) for x in range(0, 10)] + ['-']
+    if cast is float:
+        charset.append('.')
+    for char in string:
+        if char not in charset:
+            string = string.replace(char, '')
+    if string == '':
+        string = default
+    return cast(string)
 
 
 def find_spectrum_files(input_dir, file_ext):
@@ -130,7 +133,7 @@ def load_spectra(filepath, channels=None):
             if field in META_FIELDS:
                 meta[field] = val
         elif all(can_be_float(item) for item in line):
-            if '.' not in line:
+            if '.' not in ''.join(line):
                 # All integers means this is formatted.
                 prepro = False
             break

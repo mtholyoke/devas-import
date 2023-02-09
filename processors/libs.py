@@ -93,36 +93,35 @@ class LIBSProcessor(_VectorProcessor):
         else:
             comps = [all_comps[elem][ind] for elem in elements]
             rock_type = all_noncomps[0][ind]
-            random_no = all_noncomps[1][ind]
+            random_no = int(all_noncomps[1][ind])
             matrix = all_noncomps[2][ind]
+            dopant = None
             if all_noncomps[3][ind]:
-                dopant = all_noncomps[3][ind]
+                dopant = float(all_noncomps[3][ind])
             if all_noncomps[4][ind]:
                 projects = all_noncomps[4][ind].upper()
                 projects = projects.translate({ord(c): None for c in ' ;'})
 
-        
-        optional_metas = ['Carousel', 'Target', 'Location', 'DistToTarget']
-        not_present = [i for i in optional_metas if i not in meta.keys()]
-        if 'Carousel' in not_present:
-            meta['Carousel'] = 0
-        if 'Target' in not_present:
-            meta['Target'] = 0
-        if 'Location' in not_present:
-            meta['Location'] = 0
-        if 'DistToTarget' in not_present:
-            meta['DistToTarget'] = 300
+        numeric_meta = {
+            'Carousel': {'cast': int, 'default': 0},
+            'Target': {'cast': int, 'default': 0},
+            'Location': {'cast': int, 'default': 0},
+            'LaserAttenuation': {'cast': float, 'default': 0},
+            'DistToTarget': {'cast': float, 'default': 0},
+        } 
+        for key, spec in numeric_meta.items():
+            if key in meta:
+                meta[key] = utils.clean_data(meta[key], **spec)
+            else:
+                meta[key] = spec['default']
 
-        to_clean = optional_metas + ['LaserAttenuation']
-        for i in to_clean: meta[i] = utils.clean_data(meta[i], i)
-
-        metas = np.broadcast_arrays(shot_num, int(meta['Carousel']),
-                                    meta['Sample'], int(meta['Target']),
-                                    int(meta['Location']), meta['Atmosphere'],
-                                    float(meta['LaserAttenuation']),
-                                    float(meta['DistToTarget']), meta['Date'],
-                                    projects, name, rock_type, int(random_no),
-                                    matrix, float(dopant), *comps)
+        metas = np.broadcast_arrays(shot_num, meta['Carousel'],
+                                    meta['Sample'], meta['Target'],
+                                    meta['Location'], meta['Atmosphere'],
+                                    meta['LaserAttenuation'],
+                                    meta['DistToTarget'], meta['Date'],
+                                    projects, name, rock_type, random_no,
+                                    matrix, dopant, *comps)
 
         meta_fields = [
             'Number', 'Carousel', 'Sample', 'Target', 'Location', 'Atmosphere',
