@@ -111,7 +111,7 @@ def load_spectra(filepath, channels=None):
         contents = list(csv.reader(f, quotechar='+'))
     meta = {}
     prepro = True
-    # Spectra are assumed to start at first line of comma-separated data
+    # Spectra are assumed to start at first line of all numeric data
     for i, line in enumerate(contents):
         if isinstance(line, bytes):
             line = line.decode()

@@ -146,14 +146,13 @@ class LIBSProcessor(_VectorProcessor):
             self.logger.warn(result)
             return
         spectra, meta, is_prepro = result
-        # TODO: Sort out the way this needs to work. This test and the
-        # reassignment of spectra was copied from process_mhc_files;
-        # the SuperLIBS processors have a failure condition instead:
+        # TODO: This is required for SuperLIBS but not for ChemLIBS:
         # assert is_prepro, 'Unexpected SuperLIBS raw data'
         if is_prepro:
-            self.logger.warn(f'Found prepro in {datafile[1]}')
             spectra = spectra[1:]
-        spectra = np.vstack((spectra.mean(0), spectra))
-        shot_num = np.arange(spectra.shape[0])
+        shot_num = [0]
+        if not self.averaged:
+            spectra = np.vstack((spectra.mean(0), spectra))
+            shot_num = np.arange(spectra.shape[0])
         meta = self.prepare_meta(meta, shot_num, name=datafile[0]) 
         return spectra, meta
