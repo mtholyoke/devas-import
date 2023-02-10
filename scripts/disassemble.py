@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+This script takes a previously aggregated dataset and splits it into
+individual files for processing, because that was easier than modifying
+the processor to deal with the aggregate files.
+
+It could be improved, but we only needed to run it four times.
+"""
+
 import csv
 from datetime import datetime
 
@@ -17,7 +25,7 @@ with open(f"{channels}_spectra_{dataset}.csv") as spectra_file:
 	reader = csv.reader(spectra_file)
 	spectra = {col[0]:col[1:] for col in [list(row) for row in zip(*reader)]}
 
-assert len(metadata.keys()) + 1 == len(spectra.keys()), "Mismatched channels"
+assert len(metadata.keys()) + 1 == len(spectra.keys()), "Mismatched spectra"
 
 dirname = f"{channels}_{dataset}/PREPROCESSED_NO_BLR/data"
 

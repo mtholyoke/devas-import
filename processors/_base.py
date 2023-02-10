@@ -13,15 +13,15 @@ class _BaseProcessor(object):
     Abstract base class for processing spectrum data.
 
     Requires implementations of these methods:
-    - get_id(filename): returns ID or None
-    - parse_metadata(): returns parsed metadata structure
-    - process_spectra(filename, metadata): return spectra, meta
-    - write_data(output_pattern, all_spectra, all_meta)
+    - `get_id(filename)`: returns ID or None.
+    - `parse_metadata()`: returns parsed metadata structure.
+    - `process_spectra(filename, metadata)`: return spectra, meta.
+    - `write_data(output_pattern, all_spectra, all_meta)`
 
     Requires implementations of these members:
-    - driver: either 'family' for distributed or None for single file
-    - file_ext: what spectra files all end with, such as '_spect.csv'
-    - pkey_field: which metadata uniquely identifies spectra
+    - `driver`: either 'family' for distributed or None for one file.
+    - `file_ext`: what spectra files all end with, like '_spect.csv'.
+    - `pkey_field`: which metadata uniquely identifies spectra.
     """
 
     def __init__(self, **kwargs):
@@ -48,7 +48,7 @@ class _BaseProcessor(object):
 
     def main(self):
         """
-        Drives the processing of spectra from input data.
+        Drive the processing of spectra from input data.
         """
         self.logger.info(f'Starting processing for {self.name}')
         # Check output for spectra we have already processed
@@ -74,7 +74,7 @@ class _BaseProcessor(object):
 
     def construct_paths(self):
         """
-        Identifies input and output directories based on config.
+        Identify input and output directories based on config.
         """
         root = getattr(self, 'root_dir', '')
         base = os.path.join(root, getattr(self, 'base_dir', ''))
@@ -108,11 +108,19 @@ class _BaseProcessor(object):
 
     def filter_input_data(self, input_data, processed_ids):
         """
-        Returns a copy of input_data with previously seen files removed.
+        Remove previously seen files from `input_data`.
 
-        Parameter input_data: non-empty result from get_input_data().
+        Parameters
+        ----------
+        input_data : dict
+            Non-empty result from `get_input_data()`.
+        processed_ids : list
+            Result from `get_processed_ids()`.
 
-        Parameter processed_ids: result from get_processed_ids().
+        Returns
+        -------
+        dict
+            A copy of `input_data` with files removed.
         """
         unprocessed = {}
         for dirname in input_data:
@@ -129,7 +137,7 @@ class _BaseProcessor(object):
 
     def get_child_logger(self):
         """
-        Creates a child logger with the root logger’s formatter.
+        Create a child logger with the root logger’s formatter.
         """
         handler = logging.FileHandler(self.paths['log'])
         handler.setFormatter(self.logger.handlers[0].formatter)
@@ -140,10 +148,11 @@ class _BaseProcessor(object):
     # This is overridden in LIBSProcessor:
     def get_input_data(self):
         """
-        Returns a struct of files to consider for processing.
+        Return a struct of files to consider for processing.
 
-        The outer structure is a dict, with keys being the directory checked
-        for data files and values being lists of tuples of (ID, filename).
+        The outer structure is a dict, with keys being the directory
+        checked for data files and values being lists of tuples of
+        (ID, filename).
         """
         data = {}
         for input_dir in self.paths['data']:
@@ -160,7 +169,7 @@ class _BaseProcessor(object):
 
     def get_processed_ids(self):
         """
-        Returns a list of the spectra present in previous output.
+        Return a list of the spectra present in previous output.
         """
         filename = self.output_prefix + '_meta.npz'
         filepath = os.path.join(self.paths['output'], filename)
@@ -174,26 +183,28 @@ class _BaseProcessor(object):
     # This is overridden in _TrajectoryProcessor:
     def is_trajectory(self):
         """
-        Returns a boolean whether the spectrum data is trajectory format.
+        Return a boolean whether the spectrum data is trajectory format.
         """
         return False
 
     def is_raman(self):
         """
-        Returns a boolean if running Raman. Overriden in raman.py
+        Return a boolean if running Raman. Overriden in raman.py.
         """
         return False
 
     def make_batches(self, unprocessed):
         """
-        Returns a struct of batches of files to be processed.
+        Return a struct of batches of files to be processed.
 
-        The structure is similar to the output of get_input_data(), but the
-        contents of the list are lists of tuples instead of just tuples.
-        Maximum size of a list of tuples is self.batch_size.
+        The structure is similar to the output of `get_input_data()`,
+        but the contents of the list are lists of tuples instead of
+        just tuples. Maximum size of a list is `self.batch_size`.
 
-        Parameter unprocessed: struct of files to be processed as returned
-        from filter_input_data().
+        Parameters
+        ----------
+        unprocessed
+            Struct of files to be processed.
         """
         data = {}
         for dirname, files in unprocessed.items():
@@ -219,13 +230,15 @@ class _BaseProcessor(object):
 
     def process_all(self, unprocessed):
         """
-        Drives the processing of files in reasonably-sized batches.
+        Drive the processing of files in reasonably-sized batches.
 
-        Prints messages that show how long each batch has taken to complete
-        along with when the batch starts.
+        Print messages that show how long each batch has taken to
+        complete along with when the batch starts.
 
-        Parameter unprocessed: struct of files to be processed as returned
-        from filter_input_data().
+        Parameters
+        ----------
+        unprocessed
+            Struct of files to be processed.
         """
         to_process = self.make_batches(unprocessed)
         toc = time()
@@ -236,14 +249,15 @@ class _BaseProcessor(object):
             tic = time()
             self.logger.debug(f'Batch completed in {tic - toc:0.1f} seconds')
             toc = tic
-        return
 
     def process_batch(self, batch):
         """
-        Takes each file in a batch and creates or appends data to the output.
+        Take each file in a batch and create/append to the output.
 
-        Parameter batch: a list of tuples representing files within
-        directories to be processed.
+        Parameters
+        ----------
+        batch : list
+            Tuples representing files to be processed.
         """
         all_spectra, all_meta = [], []
         for datafile in batch:
@@ -269,11 +283,15 @@ class _BaseProcessor(object):
     # This is extended by _VectorProcessor:
     def process_file(self, datafile):
         """
-        Returns a processed single file from a batch.
+        Return a processed single file from a batch.
 
-        Gives warning if the file, its spectra, or metadata does not exist
+        Gives warning if the file, its spectra, or metadata does
+        not exist.
 
-        Parameter datafile: a single tuple representing a file.
+        Parameters
+        ----------
+        datafile
+            A single tuple representing a file.
         """
         processed = self.process_spectra(datafile)
         if processed is None or processed[0] is None or processed[1] is None:
@@ -282,9 +300,12 @@ class _BaseProcessor(object):
 
     def restructure_meta(self, all_meta):
         """
-        Returns a dict to be the metadata portion of the output.
+        Return a dict to be the metadata portion of the output.
 
-        Parameter all_meta: metadata as extracted from the spectra files.
+        Parameters
+        ----------
+        all_meta
+            Metadata as extracted from the spectra files.
         """
         if isinstance(all_meta[0][self.pkey_field], (list, np.ndarray)):
             return dict((k, np.concatenate([m[k] for m in all_meta]))
@@ -294,9 +315,12 @@ class _BaseProcessor(object):
 
     def write_metadata(self, all_meta):
         """
-        Outputs the metadata.
+        Output the metadata.
 
-        Parameter all_meta: dict as received from restructure_meta().
+        Parameters
+        ----------
+        all_meta : dict
+            As received from `restructure_meta()`.
         """
         filename = self.output_prefix + '_meta.npz'
         filepath = os.path.join(self.paths['output'], filename)
@@ -312,12 +336,12 @@ class _VectorProcessor(_BaseProcessor):
     Abstract base class.
 
     Requires implementations of these members:
-    - channels: the number of bands expected in the spectra
+    - `channels`: the number of bands expected in the spectra
     """
 
     def process_file(self, datafile):
         """
-        Override of _BaseProcessor's process_file() to enforce data shape.
+        Override _BaseProcessor to enforce data shape.
         """
         spectra, meta = super().process_file(datafile)
         if spectra is None or meta is None:
@@ -332,14 +356,17 @@ class _VectorProcessor(_BaseProcessor):
 
     def write_data(self, filepath, all_spectra, all_meta):
         """
-        Writes output data files.
+        Write output data files.
 
-        Parameter filepath: target filename to write to.
-
-        Parameter all_spectra: data to write.
-
-        Parameter all_meta: metadata about spectra. Unused in Vector output
-        but we need it in the API for Trajectory output.
+        Parameters
+        ----------
+        filepath : string
+            Target filename to write to.
+        all_spectra
+            Data to write.
+        all_meta
+            Metadata about spectra. Unused in Vector output but we
+            need it in the API for Trajectory output.
         """
         spectra = np.vstack(all_spectra)
         fh = h5py.File(filepath, 'a', driver=self.driver, libver='latest')
@@ -361,19 +388,22 @@ class _TrajectoryProcessor(_BaseProcessor):
 
     def is_trajectory(self):
         """
-        Override of _BaseProcessor's is_trajectory().
+        Override _BaseProcessor.
         """
         return True
 
     def write_data(self, filepath, all_spectra, all_meta):
         """
-        Writes output data files.
+        Write output data files.
 
-        Parameter filepath: target filename to write to.
-
-        Parameter all_spectra: data to write.
-
-        Parameter all_meta: metadata about spectra.
+        Parameters
+        ----------
+        filepath : string
+            Target filename to write to.
+        all_spectra
+            Data to write.
+        all_meta
+            Metadata about spectra.
         """
         ids = all_meta[self.pkey_field]
         fh = h5py.File(filepath, 'a', driver=self.driver, libver='latest')

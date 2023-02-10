@@ -29,8 +29,7 @@ def clean_data(string, cast=int, default=0):
     Strips non-numeric characters from the string and returns the
     resulting string cast to the specified numeric type.
 
-    Parameter string: from dictionary of meta, a metadata value that
-    should be an int or float.
+    Parameter string: a metadata value that should be numeric
     Parameter cast: what numeric type (int or float) to return
     Parameter default: default value if string is empty after cleanup
     """
