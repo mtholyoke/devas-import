@@ -26,6 +26,7 @@ datasets:
     # log_dir: nightly-logs
     # output_dir: to-DEVAS
     # output_prefix: prepro_no_blr
+    # channels_file: prepro_channels.npy
 
 
 ### Logging configuration

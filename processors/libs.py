@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import os.path
 from . import utils
 from ._base import _VectorProcessor
 
@@ -11,9 +12,9 @@ class LIBSProcessor(_VectorProcessor):
     Processes spectra data from LIBS (i.e, ChemLIBS and SuperLIBS)
 
     Implements these methods required by _base.py:
-    - get_id(filename) returns ID or None
-    - parse_metadata() returns parsed metadata structure
-    - process_spectra(filename, metadata) return spectra, meta
+    - get_id(filename): returns ID or None
+    - parse_metadata(): returns parsed metadata structure
+    - process_spectra(filename, metadata): return spectra, meta
 
     Implements these members required by _base.py:
     - driver: family by default
@@ -24,6 +25,7 @@ class LIBSProcessor(_VectorProcessor):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.logger = self.get_child_logger()
+        self.wavelengths = None
         required = ['channels']
         for attr in required:
             if not hasattr(self, attr):
@@ -63,7 +65,7 @@ class LIBSProcessor(_VectorProcessor):
 
     def parse_metadata(self):
         """
-        Returns data from Millennium_comps file. 
+        Returns data from Millennium_comps file.
         """
         self.logger.debug('Parsing metadata')
         return utils.parse_millennium_comps(self.paths['metadata'][0])
@@ -108,7 +110,7 @@ class LIBSProcessor(_VectorProcessor):
             'Location': {'cast': int, 'default': 0},
             'LaserAttenuation': {'cast': float, 'default': 0},
             'DistToTarget': {'cast': float, 'default': 0},
-        } 
+        }
         for key, spec in numeric_meta.items():
             if key in meta:
                 meta[key] = utils.clean_data(meta[key], **spec)
@@ -133,7 +135,7 @@ class LIBSProcessor(_VectorProcessor):
 
     def process_spectra(self, datafile):
         """
-        Returns a processed single file from a batch of file, 
+        Returns a processed single file from a batch of file,
         including data and metadata
 
         Parameter datafile: a single tuple representing a file
@@ -148,10 +150,21 @@ class LIBSProcessor(_VectorProcessor):
         # TODO: This is required for SuperLIBS but not for ChemLIBS:
         # assert is_prepro, 'Unexpected SuperLIBS raw data'
         if is_prepro:
+            if not self.wavelengths:
+                self.wavelengths = np.array(spectra[0], dtype=float)
             spectra = spectra[1:]
         shot_num = [0]
         if not self.averaged:
             spectra = np.vstack((spectra.mean(0), spectra))
             shot_num = np.arange(spectra.shape[0])
-        meta = self.prepare_meta(meta, shot_num, name=datafile[0]) 
+        meta = self.prepare_meta(meta, shot_num, name=datafile[0])
         return spectra, meta
+
+    def write_data(self, filepath, all_spectra, all_meta):
+        """
+        Override of _VectorImporter’s write_data() to output wavelengths
+        """
+        super.write_data(filepath, all_spectra, all_meta)
+        if not os.path.isfile(self.paths['channels']):
+            np.save(self.paths['channels'], self.wavelengths,
+                    allow_pickle=True)

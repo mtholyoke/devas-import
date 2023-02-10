@@ -13,15 +13,15 @@ class _BaseProcessor(object):
     Abstract base class for processing spectrum data.
 
     Requires implementations of these methods:
-    - get_id(filename) returns ID or None
-    - parse_metadata() returns parsed metadata structure
-    - process_spectra(filename, metadata) return spectra, meta
+    - get_id(filename): returns ID or None
+    - parse_metadata(): returns parsed metadata structure
+    - process_spectra(filename, metadata): return spectra, meta
     - write_data(output_pattern, all_spectra, all_meta)
 
     Requires implementations of these members:
-    - driver, either 'family' for distributed or None for single file
-    - file_ext, e.g., '.txt'
-    - pkey_field
+    - driver: either 'family' for distributed or None for single file
+    - file_ext: what spectra files all end with, such as '_spect.csv'
+    - pkey_field: which metadata uniquely identifies spectra
     """
 
     def __init__(self, **kwargs):
@@ -39,6 +39,7 @@ class _BaseProcessor(object):
             'log_dir': 'nightly-logs',
             'output_dir': 'to-DEVAS',
             'output_prefix': 'prepro_no_blr',
+            'channels_file': 'prepro_channels.npy'
         }
         for key, value in defaults.items():
             if not hasattr(self, key):
@@ -95,12 +96,14 @@ class _BaseProcessor(object):
         output = os.path.join(base, getattr(self, 'output_dir', ''))
         if not os.path.exists(output):
             os.makedirs(output, mode=0o755)
+        channels = os.path.join(base, self.channels_file)
         self.paths = {
           'base': base,
           'metadata': meta,
           'data': data,
           'log': logpath,
           'output': output,
+          'channels': channels,
         }
 
     def filter_input_data(self, input_data, processed_ids):
@@ -133,7 +136,7 @@ class _BaseProcessor(object):
         logger = self.logger.getChild(self.safe_name)
         logger.addHandler(handler)
         return logger
-    
+
     # This is overridden in LIBSProcessor:
     def get_input_data(self):
         """
@@ -259,8 +262,8 @@ class _BaseProcessor(object):
         all_meta = self.restructure_meta(all_meta)
         output_suffix = '.hdf5' if self.driver is None else '.%03d.hdf5'
         output_pattern = self.output_prefix + output_suffix
-        ouput_filepath = os.path.join(self.paths['output'], output_pattern)
-        self.write_data(ouput_filepath, all_spectra, all_meta)
+        output_filepath = os.path.join(self.paths['output'], output_pattern)
+        self.write_data(output_filepath, all_spectra, all_meta)
         self.write_metadata(all_meta)
 
     # This is extended by _VectorProcessor:
@@ -309,7 +312,7 @@ class _VectorProcessor(_BaseProcessor):
     Abstract base class.
 
     Requires implementations of these members:
-    - n_chans e.g., 6144
+    - channels: the number of bands expected in the spectra
     """
 
     def process_file(self, datafile):
