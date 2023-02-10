@@ -2,7 +2,7 @@
 ### Processor configuration
 
 # This is the base directory for all datasets.
-root_dir: /mnt/mars/mdyar
+root_dir: /data
 
 # How many data files to process in each batch (default 500).
 # batch_size: 500
