@@ -96,7 +96,7 @@ class _BaseProcessor(object):
         output = os.path.join(base, getattr(self, 'output_dir', ''))
         if not os.path.exists(output):
             os.makedirs(output, mode=0o755)
-        channels = os.path.join(base, self.channels_file)
+        channels = os.path.join(output, self.channels_file)
         self.paths = {
           'base': base,
           'metadata': meta,

@@ -150,7 +150,7 @@ class LIBSProcessor(_VectorProcessor):
         # TODO: This is required for SuperLIBS but not for ChemLIBS:
         # assert is_prepro, 'Unexpected SuperLIBS raw data'
         if is_prepro:
-            if not self.wavelengths:
+            if self.wavelengths is None:
                 self.wavelengths = np.array(spectra[0], dtype=float)
             spectra = spectra[1:]
         shot_num = [0]
@@ -164,7 +164,7 @@ class LIBSProcessor(_VectorProcessor):
         """
         Override of _VectorImporter’s write_data() to output wavelengths
         """
-        super.write_data(filepath, all_spectra, all_meta)
+        super().write_data(filepath, all_spectra, all_meta)
         if not os.path.isfile(self.paths['channels']):
             np.save(self.paths['channels'], self.wavelengths,
                     allow_pickle=True)
