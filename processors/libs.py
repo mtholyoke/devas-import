@@ -90,7 +90,7 @@ class LIBSProcessor(_VectorProcessor):
         try:
             ind = all_samps.index(sample)
         except Exception as e:
-            self.logger.warn(f'Failed to get comps for {name}: {e}')
+            self.logger.warning(f'Failed to get comps for {name}: {e}')
             return None
         else:
             comps = [all_comps[elem][ind] for elem in elements]
@@ -116,7 +116,7 @@ class LIBSProcessor(_VectorProcessor):
                 meta[key] = utils.clean_data(meta[key], **spec)
             else:
                 meta[key] = spec['default']
-
+         
         metas = np.broadcast_arrays(shot_num, meta['Carousel'],
                                     meta['Sample'], meta['Target'],
                                     meta['Location'], meta['Atmosphere'],
@@ -133,6 +133,7 @@ class LIBSProcessor(_VectorProcessor):
 
         return dict(zip(meta_fields, metas))
 
+        
     def process_spectra(self, datafile):
         """
         Returns a processed single file from a batch of file,
@@ -144,7 +145,7 @@ class LIBSProcessor(_VectorProcessor):
         if not result:
             return
         if isinstance(result, str):
-            self.logger.warn(result)
+            self.logger.warning(result)
             return
         spectra, meta, is_prepro = result
         # TODO: This is required for SuperLIBS but not for ChemLIBS:
@@ -158,6 +159,15 @@ class LIBSProcessor(_VectorProcessor):
             spectra = np.vstack((spectra.mean(0), spectra))
             shot_num = np.arange(spectra.shape[0])
         meta = self.prepare_meta(meta, shot_num, name=datafile[0])
+
+        #adding in si ratio
+        chan_ranges = (288., 288.5, 633., 635.5)
+        den_lo, den_hi, num_lo, num_hi = np.searchsorted(self.wavelengths, chan_ranges)
+        si_ratio = np.asarray(spectra[:, num_lo:num_hi].max(axis=1) /
+                                  spectra[:, den_lo:den_hi].max(axis=1))
+        np.maximum(si_ratio, 0, out=si_ratio)
+        meta['si'] = si_ratio
+
         return spectra, meta
 
     def write_data(self, filepath, all_spectra, all_meta):

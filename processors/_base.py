@@ -350,7 +350,7 @@ class _VectorProcessor(_BaseProcessor):
         n_meta = len(pkeys) if isinstance(pkeys, (list, np.ndarray)) else 1
         n_spectra = 1 if spectra.ndim == 1 else spectra.shape[0]
         if n_spectra != n_meta:
-            self.logger.warn(f'Unexpected number of shots in {datafile[1]}')
+            self.logger.warning(f'Unexpected number of shots in {datafile[1]}')
             return None, None
         return spectra, meta
 
@@ -410,7 +410,7 @@ class _TrajectoryProcessor(_BaseProcessor):
         for id, spectrum in zip(ids, all_spectra):
             path = f'/spectra/{id}'
             if path in fh:
-                self.logger.warn(f'Overwriting previous entry in {path}')
+                self.logger.warning(f'Overwriting previous entry in {path}')
                 del fh[path]
             fh.create_dataset(path, data=spectrum)
         fh.close()

@@ -118,7 +118,7 @@ class MossbauerImporter(_TrajectoryProcessor):
         if not result:
             return
         if isinstance(result, str):
-            self.logger.warn(result)
+            self.logger.warning(result)
             return 
         #spectra starts as empty list in pmf 
         spectra = result
