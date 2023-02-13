@@ -34,6 +34,7 @@ class _BaseProcessor(object):
                 raise AttributeError(f'Attribute "{attr}" is required')
         defaults = {
             'batch_size': 500,
+            'averaged': False,
             'logger': logging.getLogger(),
             'log_dir': 'nightly-logs',
             'output_dir': 'to-DEVAS',
