@@ -32,9 +32,9 @@ def clean_data(string, type):
     be an int or float.
     Parameter type: which category of metadata the string is from 
     """
-    characters = [str(x) for x in range(0,9)] + ['-', '.']
+    characters = [str(x) for x in range(0,10)] + ['-', '.']
     for ch in string: 
-        if ch not in characters: string = string.replace(ch, "")
+        if ch not in characters and not np.isNaN(ch): string = string.replace(ch, "")
     
     if type == "LaserAttenuation" or type == "DistToTarget": return string
     else: string = string.replace('.', "")
