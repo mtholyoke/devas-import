@@ -26,6 +26,7 @@ class LIBSProcessor(_VectorProcessor):
         super().__init__(**kwargs)
         self.logger = self.get_child_logger()
         self.wavelengths = None
+        self.channel_ranges = (288., 288.5, 633., 635.5)
         required = ['channels']
         for attr in required:
             if not hasattr(self, attr):
@@ -38,6 +39,18 @@ class LIBSProcessor(_VectorProcessor):
         for key, value in defaults.items():
             if not hasattr(self, key):
                 setattr(self, key, value)
+
+    def calculate_si_ratio(self, spectra):
+        si_ratios = []
+        for spectrum in spectra:
+            den_lo, den_hi, num_lo, num_hi = np.searchsorted(
+                spectrum,
+                self.channel_ranges)
+            si_ratio = np.asarray(spectra[:, num_lo:num_hi].max(axis=1)
+                                  / spectra[:, den_lo:den_hi].max(axis=1))
+            np.maximum(si_ratio, 0, out=si_ratio)
+            si_ratios.append(si_ratio)
+        return si_ratios
 
     def get_id(self, filename):
         """
@@ -116,7 +129,7 @@ class LIBSProcessor(_VectorProcessor):
                 meta[key] = utils.clean_data(meta[key], **spec)
             else:
                 meta[key] = spec['default']
-         
+
         metas = np.broadcast_arrays(shot_num, meta['Carousel'],
                                     meta['Sample'], meta['Target'],
                                     meta['Location'], meta['Atmosphere'],
@@ -133,7 +146,6 @@ class LIBSProcessor(_VectorProcessor):
 
         return dict(zip(meta_fields, metas))
 
-        
     def process_spectra(self, datafile):
         """
         Returns a processed single file from a batch of file,
@@ -159,14 +171,7 @@ class LIBSProcessor(_VectorProcessor):
             spectra = np.vstack((spectra.mean(0), spectra))
             shot_num = np.arange(spectra.shape[0])
         meta = self.prepare_meta(meta, shot_num, name=datafile[0])
-
-        #adding in si ratio
-        chan_ranges = (288., 288.5, 633., 635.5)
-        den_lo, den_hi, num_lo, num_hi = np.searchsorted(self.wavelengths, chan_ranges)
-        si_ratio = np.asarray(spectra[:, num_lo:num_hi].max(axis=1) /
-                                  spectra[:, den_lo:den_hi].max(axis=1))
-        np.maximum(si_ratio, 0, out=si_ratio)
-        meta['si'] = si_ratio
+        meta['si'] = self.calculate_si_ratio(spectra)
 
         return spectra, meta
 
