@@ -26,7 +26,7 @@ class LIBSProcessor(_VectorProcessor):
         super().__init__(**kwargs)
         self.logger = self.get_child_logger()
         self.wavelengths = None
-        self.channel_ranges = (288., 288.5, 633., 635.5)
+        self.si_constants = None
         required = ['channels']
         for attr in required:
             if not hasattr(self, attr):
@@ -41,16 +41,11 @@ class LIBSProcessor(_VectorProcessor):
                 setattr(self, key, value)
 
     def calculate_si_ratio(self, spectra):
-        si_ratios = []
-        for spectrum in spectra:
-            den_lo, den_hi, num_lo, num_hi = np.searchsorted(
-                spectrum,
-                self.channel_ranges)
-            si_ratio = np.asarray(spectra[:, num_lo:num_hi].max(axis=1)
-                                  / spectra[:, den_lo:den_hi].max(axis=1))
-            np.maximum(si_ratio, 0, out=si_ratio)
-            si_ratios.append(si_ratio)
-        return si_ratios
+        den_lo, den_hi, num_lo, num_hi = self.si_constants
+        si_ratio = np.asarray(spectra[:, num_lo:num_hi].max(axis=1)
+                              / spectra[:, den_lo:den_hi].max(axis=1))
+        np.maximum(si_ratio, 0, out=si_ratio)
+        return si_ratio
 
     def get_id(self, filename):
         """
@@ -165,6 +160,9 @@ class LIBSProcessor(_VectorProcessor):
         if is_prepro:
             if self.wavelengths is None:
                 self.wavelengths = np.array(spectra[0], dtype=float)
+                self.si_constants = np.searchsorted(
+                    self.wavelengths,
+                    (288., 288.5, 633., 635.5))
             spectra = spectra[1:]
         shot_num = [0]
         if not self.averaged:
@@ -172,7 +170,6 @@ class LIBSProcessor(_VectorProcessor):
             shot_num = np.arange(spectra.shape[0])
         meta = self.prepare_meta(meta, shot_num, name=datafile[0])
         meta['si'] = self.calculate_si_ratio(spectra)
-
         return spectra, meta
 
     def write_data(self, filepath, all_spectra, all_meta):
