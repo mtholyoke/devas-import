@@ -57,8 +57,9 @@ class MossbauerImporter(_TrajectoryProcessor):
         The function that this calls in utils is lifted directly from
         its equivalent function in process_mossbauer_files.py
         """
-        self.logger.debug('Parsing metadata')
+        self.logger.debug('Loading masterfile...')
         self.meta = utils.parse_masterfile(self.paths['metadata'][0], self.superman_fields)
+        self.logger.debug('Finished loading masterfile.')
         return self.meta
 
     def process_metadata(self, metadata, filename):
@@ -73,7 +74,7 @@ class MossbauerImporter(_TrajectoryProcessor):
         pkeys = np.asarray(metadata[self.pkey_field], dtype=str) #for unicode
         meta_idx, = np.where(pkeys == self.get_id(filename))
         if len(meta_idx) != 1:
-            print('  Cannot match spectrum and masterfile', filename)
+            self.logger.warning(f'Cannot match spectrum and masterfile {filename}')
             return
         meta_idx = meta_idx[0]
         if metadata['Post?'][meta_idx] is None or \
@@ -97,13 +98,13 @@ class MossbauerImporter(_TrajectoryProcessor):
                     #make a list so that len will function as expected
                     row = list(map(float, line.split()))
                     if len(row) != 2:
-                      print('  Wrong data format in file', datafile)
+                      self.logger.warning(f'Wrong data format in file {datafile}')
                       return
                     spectra.append(np.asarray(row, dtype=float))
                 except ValueError:
                     pass
         if len(spectra) != self.channels:
-            print('  Expected', self.channels, 'channels, got', len(spectra), 'in', datafile)
+            self.logger.warning(f'Expected {self.channels} channels, got {len(spectra)} in {datafile}')
             return
         return spectra
     

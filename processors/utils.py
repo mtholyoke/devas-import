@@ -194,7 +194,6 @@ def parse_masterfile(cfile, fields):
     """
     #check if it's raman
     isMossbauer = fields != 'spectrum_number'
-    print('Loading masterfile...')
     start = time()
     book = load_workbook(cfile, data_only=True)
     sheet = book.active
@@ -227,7 +226,6 @@ def parse_masterfile(cfile, fields):
                         print('Duplicate value: ', cell.value)
                 if header is not None:
                     meta[header].append(cell.value)
-    print('  done. %.2fs' % (time() - start))
     return meta
 
 

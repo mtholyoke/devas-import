@@ -61,8 +61,9 @@ class RamanImporter(_TrajectoryProcessor):
         """
         Returns data from metadata file. 
         """
-        self.logger.debug('Parsing metadata')
+        self.logger.debug('Loading masterfile...')
         self.meta = utils.parse_masterfile(self.paths['metadata'][0], self.pkey_field)
+        self.logger.debug('Finished loading masterfile.')
         return self.meta 
 
     def process_spectra(self, datafile):
@@ -76,7 +77,7 @@ class RamanImporter(_TrajectoryProcessor):
         meta_idx, = np.where(pkeys == self.get_id(datafile[1]))
 
         if len(meta_idx) != 1:
-            print('  Cannot match spectra and masterfile', datafile[1])
+            self.logger.warning(f'Cannot match spectra and masterfile {datafile[1]}')
             return
         meta = {key: val[meta_idx[0]] for key, val in self.meta.items()}
         
