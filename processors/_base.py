@@ -176,7 +176,8 @@ class _BaseProcessor(object):
         self.logger.debug(f'Checking for previous output file {filepath}')
         if not os.path.isfile(filepath):
             return []
-        meta = np.load(filepath)
+        #so raman data is not pickled
+        meta = np.load(filepath, allow_pickle = not self.is_raman())
         ids = meta[self.pkey_field]
         return [x.decode() if isinstance(x, bytes) else x for x in ids]
 
@@ -264,9 +265,9 @@ class _BaseProcessor(object):
             spectra, meta = self.process_file(datafile)
             if spectra is None or meta is None:
                 continue
-            if self.is_raman() and isinstance(spectra, list):
-                all_spectra.extend(spectra)
-                all_meta.extend(meta)
+            #if self.is_raman() and isinstance(spectra, list):
+             #   all_spectra.append(spectra)
+              #  all_meta.append(meta)
             else:
                 all_spectra.append(spectra)
                 all_meta.append(meta)

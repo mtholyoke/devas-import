@@ -105,9 +105,9 @@ class LIBSProcessor(_VectorProcessor):
             rock_type = all_noncomps[0][ind]
             random_no = int(all_noncomps[1][ind])
             matrix = all_noncomps[2][ind]
-            dopant = None
+            dopant = np.nan 
             if all_noncomps[3][ind]:
-                dopant = float(all_noncomps[3][ind])
+                dopant = all_noncomps[3][ind]
             if all_noncomps[4][ind]:
                 projects = all_noncomps[4][ind].upper()
                 projects = projects.translate({ord(c): None for c in ' ;'})
@@ -131,7 +131,7 @@ class LIBSProcessor(_VectorProcessor):
                                     meta['LaserAttenuation'],
                                     meta['DistToTarget'], meta['Date'],
                                     projects, name, rock_type, random_no,
-                                    matrix, dopant, *comps)
+                                    matrix, float(dopant), *comps)
 
         meta_fields = [
             'Number', 'Carousel', 'Sample', 'Target', 'Location', 'Atmosphere',
@@ -155,8 +155,6 @@ class LIBSProcessor(_VectorProcessor):
             self.logger.warning(result)
             return
         spectra, meta, is_prepro = result
-        # TODO: This is required for SuperLIBS but not for ChemLIBS:
-        # assert is_prepro, 'Unexpected SuperLIBS raw data'
         if is_prepro:
             if self.wavelengths is None:
                 self.wavelengths = np.array(spectra[0], dtype=float)
@@ -169,7 +167,7 @@ class LIBSProcessor(_VectorProcessor):
             spectra = np.vstack((spectra.mean(0), spectra))
             shot_num = np.arange(spectra.shape[0])
         meta = self.prepare_meta(meta, shot_num, name=datafile[0])
-        meta['si'] = self.calculate_si_ratio(spectra)
+        meta['si_test'] = self.calculate_si_ratio(spectra)
         return spectra, meta
 
     def write_data(self, filepath, all_spectra, all_meta):

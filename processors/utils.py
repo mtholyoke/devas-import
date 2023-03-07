@@ -218,8 +218,14 @@ def parse_masterfile(cfile, fields):
                     if header == 'Dana Group' and not cell.value:
                         cell.value = 'n/a'
                     meta[header].append(cell.value)
-        else: #if it's a raman file
-            row[0].value = int(str(row[0].value).split('_')[0])
+        #if it's a raman file
+        else: 
+            val_list = str(row[0].value).split('_')
+            val = val_list[0]
+            for i in range(1, len(val_list)):
+                val = val + "_" + val_list[i]
+            row[0].value = val
+            #row[0].value = str(row[0].value).split('_')[0]
             for header, cell in zip(headers, row):
                 if header == 'spectrum_number':
                     if cell.value in meta[header]:

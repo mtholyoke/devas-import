@@ -37,6 +37,8 @@ Runs the processors for all datasets in `config.yml`.
 Defines processors to be run by `process_all.py`.
 
 
+**TODO** Add contents defining new processor files from the Python 3 upgrades, then delete these old descriptions.
+
 ## Old active contents to be upgraded to run in Python 3
 
 ### Driver script `mirror_pds.sh`
@@ -76,8 +78,6 @@ This script processes Raman data; it’s set up for the MHC Raman dataset.
 #### `process_superlibs_files.py`
 
 This script processes LIBS data; it’s set up for the MHC SuperLIBS 5120 dataset, which has varying numbers of channels and is handled (questionably) as trajectory data instead of vector.
-
-**TODO:** This script is somewhat unreliable at building on previous processing, and needs to get that sorted before it goes into heavy use.
 
 
 ## Old inactive contents to be upgraded or removed
