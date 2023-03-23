@@ -7,6 +7,18 @@ import re
 import os
 from time import time, strftime
 
+"""
+Description
+
+Parameters
+----------
+p1:
+p2:
+
+Returns
+---------
+"""
+
 
 class _BaseProcessor(object):
     """
@@ -138,6 +150,12 @@ class _BaseProcessor(object):
     def get_child_logger(self):
         """
         Create a child logger with the root logger’s formatter.
+
+        Returns
+        -------
+        logger
+            A logger for use throughout base.py and its children,
+            used primarily to output warnings and errors. 
         """
         handler = logging.FileHandler(self.paths['log'])
         handler.setFormatter(self.logger.handlers[0].formatter)
@@ -148,11 +166,19 @@ class _BaseProcessor(object):
     # This is overridden in LIBSProcessor:
     def get_input_data(self):
         """
-        Return a struct of files to consider for processing.
+        Iterates through the input directoriy to check for files
+        to be processed and retrieves ids from those files if present.
+        If the dataset is not raman, id is equal to the file's name 
+        with the file type removed. If the dataset IS raman, then
+        id is equal to the file's name with the file type removed,
+        then checking for possible underscores. 
 
-        The outer structure is a dict, with keys being the directory
-        checked for data files and values being lists of tuples of
-        (ID, filename).
+        Returns
+        -------
+        data
+            a dictionary where keys are directories to be checked for 
+            data files, and values are lists of tuples that follow the
+            format (ID, filename)
         """
         data = {}
         for input_dir in self.paths['data']:
@@ -163,8 +189,17 @@ class _BaseProcessor(object):
                     if filename.lower().endswith(self.file_ext.lower()):
                         fid = self.get_id(filename)
                         if fid is not None:
-                            full_filename = os.path.join(root, filename)
-                            data[base].append((fid, full_filename))
+                            if not self.is_raman():
+                                full_filename = os.path.join(root, filename)
+                                data[base].append((fid, full_filename))
+                            if self.is_raman():
+                                full_filename = os.path.join(root, filename)
+                                #as code in process spectra in raman
+                                is_underscored = self.is_underscored(full_filename)
+                                if is_underscored:
+                                    fid = fid + "_" + is_underscored
+                                data[base].append((fid, full_filename))
+
         return data
 
     def get_processed_ids(self):
@@ -265,9 +300,6 @@ class _BaseProcessor(object):
             spectra, meta = self.process_file(datafile)
             if spectra is None or meta is None:
                 continue
-            #if self.is_raman() and isinstance(spectra, list):
-             #   all_spectra.append(spectra)
-              #  all_meta.append(meta)
             else:
                 all_spectra.append(spectra)
                 all_meta.append(meta)
@@ -328,6 +360,11 @@ class _BaseProcessor(object):
         if os.path.exists(filepath):
             existing = np.load(filepath, allow_pickle=True)
             for k, v in list(all_meta.items()):
+                #all_meta[k] = just one
+                #existing[k] = if multiple runs, then multiple times
+                #below does not work, but v here is the id
+                #if k == self.pkey_field and v in existing[k]:
+                   #continue
                 all_meta[k] = np.concatenate((existing[k], v))
         np.savez(filepath, **all_meta)
 

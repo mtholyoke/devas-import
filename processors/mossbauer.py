@@ -58,7 +58,7 @@ class MossbauerImporter(_TrajectoryProcessor):
         its equivalent function in process_mossbauer_files.py
         """
         self.logger.debug('Loading masterfile...')
-        self.meta = utils.parse_masterfile(self.paths['metadata'][0], self.superman_fields)
+        self.meta = utils.parse_masterfile(self.paths['metadata'][0], self.superman_fields, self.logger)
         self.logger.debug('Finished loading masterfile.')
         return self.meta
 

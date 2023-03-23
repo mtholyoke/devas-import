@@ -79,7 +79,7 @@ class RamanImporter(_TrajectoryProcessor):
         Returns data from metadata file. 
         """
         self.logger.debug('Loading masterfile...')
-        self.meta = utils.parse_masterfile(self.paths['metadata'][0], self.pkey_field)
+        self.meta = utils.parse_masterfile(self.paths['metadata'][0], self.pkey_field, self.logger)
         self.logger.debug('Finished loading masterfile.')
         return self.meta 
 
@@ -92,24 +92,26 @@ class RamanImporter(_TrajectoryProcessor):
         pkeys = np.array(self.meta[self.pkey_field])
 
         #is_duplicate will contain either an empty string or a number now
-        is_duplicate = self.is_underscored(datafile[1])
+        #ISSUE: there are files with _0 that ARE NOT duplicates
+        is_underscored = self.is_underscored(datafile[1])
+
         #datafile is a tuple, so get the second value which is the path
-        meta_idx, = np.where(pkeys == self.get_id(datafile[1]))   
+        meta_idx, = np.where(pkeys == self.get_id(datafile[1]))
         if len(meta_idx) < 1:
-            self.logger.warning(f'Cannot match spectra and masterfile {datafile[1]}')
+            #self.logger.warning(f'Cannot match spectra and masterfile {datafile[1]}')
             return
         meta = {key: val[meta_idx[0]] for key, val in self.meta.items()}
 
-        #change the spectrum_number to the underscored version if necessary
-        if is_duplicate:
-            meta[self.pkey_field] = meta[self.pkey_field] + "_" + is_duplicate
+        #change the spectrum_number to the underscored version if necessary 
+        if is_underscored:
+            meta[self.pkey_field] = meta[self.pkey_field] + "_" + is_underscored
 
         #switched to datafile[1] for path
         spectra = np.genfromtxt(datafile[1], delimiter=',')
         if spectra.ndim != 2 or spectra.shape[1] != 2:
             self.logger.warning('Spectra must be a trajectory')
             return
-        
+
         # Make sure wavelengths are increasing
         if spectra[0,0] > spectra[1,0]:
             spectra = spectra[::-1]

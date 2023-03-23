@@ -186,7 +186,7 @@ def parse_millennium_comps(filepath):
     noncomps = [rock_types, randoms, matrices, dopants, projects]
     return samples, compositions, noncomps
 
-def parse_masterfile(cfile, fields):
+def parse_masterfile(cfile, fields, logger):
     """
     For use in mossbauer.py and raman.py
     Parameter fields: list of superman_fields if mossbauer, pkey_field if raman
@@ -225,11 +225,10 @@ def parse_masterfile(cfile, fields):
             for i in range(1, len(val_list)):
                 val = val + "_" + val_list[i]
             row[0].value = val
-            #row[0].value = str(row[0].value).split('_')[0]
             for header, cell in zip(headers, row):
                 if header == 'spectrum_number':
                     if cell.value in meta[header]:
-                        print('Duplicate value: ', cell.value)
+                        logger.warn('Duplicate value: ', cell.value)
                 if header is not None:
                     meta[header].append(cell.value)
     return meta
