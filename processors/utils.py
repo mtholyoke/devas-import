@@ -12,9 +12,16 @@ from time import time
 
 def can_be_float(string):
     """
-    Returns a boolean reflecting whether the string can be a float
-
-    Parameter string: a string to be tested to see if it can be a float
+    Determines if a given string can become a float. 
+   
+    Parameters
+    ----------
+    string
+        String to be tested.
+    
+    Returns
+    -------
+        Boolean reflecting whether the string can be a float.
     """
     try:
         float(string)
@@ -26,12 +33,20 @@ def can_be_float(string):
 
 def clean_data(string, cast=int, default=0):
     """
-    Strips non-numeric characters from the string and returns the
-    resulting string cast to the specified numeric type.
+    Takes a string and strips it of non-numerical characters. 
 
-    Parameter string: a metadata value that should be numeric
-    Parameter cast: what numeric type (int or float) to return
-    Parameter default: default value if string is empty after cleanup
+    Parameters
+    ----------
+    string 
+        A metadata value that should be numeric.
+    cast 
+        What numeric type (int or float) to return.
+    default
+        Default value if string is empty after cleanup.
+
+    Returns
+    -------
+        Cleaned string cast as given datatype. 
     """
     charset = [str(x) for x in range(0, 10)] + ['-']
     if cast is float:
@@ -47,13 +62,19 @@ def clean_data(string, cast=int, default=0):
 def find_spectrum_files(input_dir, file_ext):
     """
     Scans the data directory for particular file type and return a list of those files.
-    Used to scan for *_spect.csv
+    Used primarily to scan for *_spect.csv. Files must be in 1 level of 
+    subdirectory.
 
-    Requires these conditions: 
-        -files must be in 1 level of subdirectory
+    Parameters
+    ---------- 
+    input_dir 
+        The directory to scan through.
+    file_ext 
+        The file extension to be searched for.
 
-    Parameter input_dir: the directory to scan through
-    Parameter file_ext: the file extension to be searched for
+    Returns
+    -------
+        A list of files to process. 
     """
     fpattern = os.path.join(input_dir, '*', f'*{file_ext}')
     return [f for f in glob(fpattern)
@@ -62,17 +83,33 @@ def find_spectrum_files(input_dir, file_ext):
 
 def get_directory(filepath):
     """
-    Returns the name of the directory the file is in
+    Finds the directory a given file is in. 
 
-    Parameter filepath: the full path of a file
+    Parameters
+    ----------
+    filepath
+        The full path of a file. 
+
+    Returns
+    ------- 
+        The name of the directory a file is in.
     """
     return os.path.basename(os.path.dirname(filepath))
 
 
 def get_element_columns(sheet):
     """
-    Returns an array of elements from the sheet
-    Parameter sheet: a representation of data within an xlsx doc, like Millennium_COMPS
+    Gets the element columns from the metadata sheet (LIBS).
+    Parameters
+    ----------
+    sheet
+        the metadata sheet.
+
+    Returns
+    -------
+    elem_cols
+        an array of elements from the sheet.
+    
     """
     elem_cols = []
     for col, _ in enumerate(sheet.columns, start=1):
@@ -86,11 +123,21 @@ def get_element_columns(sheet):
     return elem_cols
 
 
-# Truncates "_spect.csv" from the filename to get the ID.
 def get_spectrum_id(filename):
     """
-    Returns: the name of the file, minus the '_spect.csv' ending
-    Parameter: a string representing the full name of the file
+    Truncates "_spect.csv" from the filename to get ID. Note:
+    is explicitly for that, not other file types.
+
+    Parameters
+    ----------
+    filename
+        a string representing the full name of the file.
+
+    Returns
+    -------
+    name[:-6]
+        the name of the file, minus the '_spect.csv' ending.
+    
     """
     name, _ = os.path.splitext(os.path.basename(filename))
     name = name.decode() if isinstance(name, bytes) else name
@@ -105,9 +152,23 @@ META_FIELDS = ['Carousel', 'Sample', 'Target', 'Location', 'Atmosphere',
 
 def load_spectra(filepath, channels=None):
     """
-    Returns information about the filepath spectra.csv file
-    Parameter filepath: the full path of a spectra.csv file
-    Parameter channels: empty
+    Loads the spectra from a single spectra file.
+
+    Parameters
+    ----------
+    filepath
+        the full path of a spectra file.
+    channels
+        number of channels (usually as self.channels).
+
+    Returns
+    ------
+    data.T
+        the spectra of the file. 
+    meta
+        a dict of meta fields to their values.
+    prepro
+        a bool is spectra is prepro.
     """
     with open(filepath, 'r') as f:
         contents = list(csv.reader(f, quotechar='+'))
@@ -153,8 +214,22 @@ def load_spectra(filepath, channels=None):
 
 def parse_millennium_comps(filepath):
     """
-    Returns arrays of the contents of the filepath file (Millennium_COMPS)
-    Parameter filepath: the full path of a file
+    Parses LIBS Millennium_comps file. 
+
+    Parameters
+    ----------
+    filepath
+        the full path to a Millennium-comps file.
+
+    Returns
+    -------
+    samples
+        the names of samples. 
+    compositions
+        a dictionary of lists with elements as keys.
+    noncomps
+        all other data within millennium_comps not contained in samples
+        or compositions.
     """
     book = openpyxl.load_workbook(filepath, data_only=True)
     sheet = book.active
@@ -188,11 +263,25 @@ def parse_millennium_comps(filepath):
 
 def parse_masterfile(cfile, fields, logger):
     """
-    For use in mossbauer.py and raman.py
-    Parameter fields: list of superman_fields if mossbauer, pkey_field if raman
-    Parameter cfile: the masterfile itself
+    Parses the masterfile for non-libs processors. Includes Raman id 
+    modification.
+
+    Parameters
+    ----------
+    cfile
+        the path to the masterfile.
+    fields
+        superman fields, or pkey depending on Mossbauer vs. Raman.
+    logger
+        logger passed in from processer for warning purposes.
+
+    Returns
+    -------
+    meta
+        a dict of lists where each meta category maps to all its values
+        from the masterfile. 
     """
-    #check if it's raman
+    # Check if it's raman.
     isMossbauer = fields != 'spectrum_number'
     start = time()
     book = load_workbook(cfile, data_only=True)
@@ -200,25 +289,20 @@ def parse_masterfile(cfile, fields, logger):
     for row in sheet.iter_rows(min_row=1, max_row=1):
         headers = [cell.value for cell in row]
     meta = defaultdict(list)
-    #replaced self.pkey_fields with next(iter(superman_fields) to get
-    #1st element
-    #changed to fields to account for raman
     if isMossbauer:
         id_ind = headers == next(iter(fields))
-    #for raman, kept pkey_fields
+    # For Raman, keep fields.
     else:
         id_ind = headers==fields
     for i, row in enumerate(sheet.rows):
         if i < 1 or row[id_ind].value is None:
             continue
-        #if it's a mossbauer file
         if isMossbauer:
             for header, cell in zip(headers, row):
                 if header in fields:
                     if header == 'Dana Group' and not cell.value:
                         cell.value = 'n/a'
                     meta[header].append(cell.value)
-        #if it's a raman file
         else: 
             val_list = str(row[0].value).split('_')
             val = val_list[0]

@@ -154,7 +154,7 @@ class _BaseProcessor(object):
         Returns
         -------
         logger
-            A logger for use throughout base.py and its children,
+            A logger for use throughout BaseProcessor and its children,
             used primarily to output warnings and errors. 
         """
         handler = logging.FileHandler(self.paths['log'])
@@ -163,20 +163,16 @@ class _BaseProcessor(object):
         logger.addHandler(handler)
         return logger
 
-    # This is overridden in LIBSProcessor:
     def get_input_data(self):
         """
         Iterates through the input directoriy to check for files
         to be processed and retrieves ids from those files if present.
-        If the dataset is not raman, id is equal to the file's name 
-        with the file type removed. If the dataset IS raman, then
-        id is equal to the file's name with the file type removed,
-        then checking for possible underscores. 
+        Overriden in LIBSProcessor.
 
         Returns
         -------
         data
-            a dictionary where keys are directories to be checked for 
+            A dictionary where keys are directories to be checked for 
             data files, and values are lists of tuples that follow the
             format (ID, filename)
         """
@@ -194,7 +190,7 @@ class _BaseProcessor(object):
                                 data[base].append((fid, full_filename))
                             if self.is_raman():
                                 full_filename = os.path.join(root, filename)
-                                #as code in process spectra in raman
+                                # As code in process spectra in raman
                                 is_underscored = self.is_underscored(full_filename)
                                 if is_underscored:
                                     fid = fid + "_" + is_underscored
@@ -204,35 +200,47 @@ class _BaseProcessor(object):
 
     def get_processed_ids(self):
         """
-        Return a list of the spectra present in previous output.
+        Finds the ids that have already been processed in a previous run
+        in order to exclude them from reprocessing later. Ensures
+        Raman data is not pickled. 
+        
+        Returns 
+        -------
+            List of the spectra present in previous output.
         """
         filename = self.output_prefix + '_meta.npz'
         filepath = os.path.join(self.paths['output'], filename)
         self.logger.debug(f'Checking for previous output file {filepath}')
         if not os.path.isfile(filepath):
             return []
-        #so raman data is not pickled
         meta = np.load(filepath, allow_pickle = not self.is_raman())
         ids = meta[self.pkey_field]
         return [x.decode() if isinstance(x, bytes) else x for x in ids]
 
-    # This is overridden in _TrajectoryProcessor:
     def is_trajectory(self):
         """
-        Return a boolean whether the spectrum data is trajectory format.
+        By default, not trajectory. Overriden in TrajectoryProcessor
+        to return True. 
+
+        Returns
+        -------
+            False.
         """
         return False
 
     def is_raman(self):
         """
-        Return a boolean if running Raman. Overriden in raman.py.
+        Return a boolean that indicated it is not a Raman processor. 
+        Overriden in RamanImporter.
+        
+        Returns
+        -------
+            False.
         """
         return False
 
     def make_batches(self, unprocessed):
         """
-        Return a struct of batches of files to be processed.
-
         The structure is similar to the output of `get_input_data()`,
         but the contents of the list are lists of tuples instead of
         just tuples. Maximum size of a list is `self.batch_size`.
@@ -241,6 +249,11 @@ class _BaseProcessor(object):
         ----------
         unprocessed
             Struct of files to be processed.
+
+        Returns
+        -------
+        to_process
+            Struct of batches of files to be processed.
         """
         data = {}
         for dirname, files in unprocessed.items():
@@ -316,8 +329,6 @@ class _BaseProcessor(object):
     # This is extended by _VectorProcessor:
     def process_file(self, datafile):
         """
-        Return a processed single file from a batch.
-
         Gives warning if the file, its spectra, or metadata does
         not exist.
 
@@ -325,6 +336,11 @@ class _BaseProcessor(object):
         ----------
         datafile
             A single tuple representing a file.
+
+        Returns
+        -------
+        processed
+            A single processed file from batch.
         """
         processed = self.process_spectra(datafile)
         if processed is None or processed[0] is None or processed[1] is None:
@@ -333,12 +349,18 @@ class _BaseProcessor(object):
 
     def restructure_meta(self, all_meta):
         """
-        Return a dict to be the metadata portion of the output.
+        Takes the metadata form by process_spectra and rearranges it
+        from each sample being an individual dict, to a dict of np arrays
+        where each array is every sample's metadata value for that key.
 
         Parameters
         ----------
         all_meta
             Metadata as extracted from the spectra files.
+
+        Returns
+        -------
+            A dict to be the metadata portion of the output.
         """
         if isinstance(all_meta[0][self.pkey_field], (list, np.ndarray)):
             return dict((k, np.concatenate([m[k] for m in all_meta]))
@@ -348,7 +370,7 @@ class _BaseProcessor(object):
 
     def write_metadata(self, all_meta):
         """
-        Output the metadata.
+        Output the metadata into an npz file.
 
         Parameters
         ----------
@@ -360,11 +382,6 @@ class _BaseProcessor(object):
         if os.path.exists(filepath):
             existing = np.load(filepath, allow_pickle=True)
             for k, v in list(all_meta.items()):
-                #all_meta[k] = just one
-                #existing[k] = if multiple runs, then multiple times
-                #below does not work, but v here is the id
-                #if k == self.pkey_field and v in existing[k]:
-                   #continue
                 all_meta[k] = np.concatenate((existing[k], v))
         np.savez(filepath, **all_meta)
 
@@ -380,6 +397,20 @@ class _VectorProcessor(_BaseProcessor):
     def process_file(self, datafile):
         """
         Override _BaseProcessor to enforce data shape.
+
+        Parameters
+        ----------
+        datafile
+            The tuple of (ID, file's full path) representing a single 
+            file. 
+
+        Returns
+        -------
+        spectra
+            spectra as per process_spectra. 
+        meta
+            A dict of metadata fields to the metadata values of those fields
+            for an individual sample. As process_spectra. 
         """
         spectra, meta = super().process_file(datafile)
         if spectra is None or meta is None:
@@ -427,6 +458,10 @@ class _TrajectoryProcessor(_BaseProcessor):
     def is_trajectory(self):
         """
         Override _BaseProcessor.
+
+        Returns
+        -------
+            True. 
         """
         return True
 

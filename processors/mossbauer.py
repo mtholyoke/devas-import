@@ -5,22 +5,21 @@ from ._base import _TrajectoryProcessor
 
 class MossbauerImporter(_TrajectoryProcessor):
     """
-    Inherits from base.py
+    Inherits from BaseProcessor
     Processes spectra data from Mossbauer
 
-    Implements these methods required by _base.py:
+    Implements these methods required by BaseProcessor:
     - get_id(filename) returns ID or None
     - parse_metadata() returns parsed metadata structure
     - process_spectra(filename, metadata) return spectra, meta
 
-    Implements these members required by _base.py:
+    Implements these members required by BaseProcessor:
     - driver: None by default
     - file_ext: '_.txt' by default
     - pkey_field: 'Sample #' by default
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        #making self.meta here to avoid referencing meta before assignment
         self.meta = {}
         self.logger = self.get_child_logger() 
         required = ['channels']
@@ -44,18 +43,28 @@ class MossbauerImporter(_TrajectoryProcessor):
 
     def get_id(self, filename):
         """
-        Returns a string representing the name of an individual txt file
-        without the .txt suffix.
-        Parameters filename: the path to a txt file
+        Finds the id from an individual file name.
+        
+        Parameters
+        ----------
+        filename 
+            the name of an individual file, no path.
+
+        Returns
+        -------
+            A string representing the name of an individual file
+            without its file type at the end.
         """
         return filename.split('.')[0]
 
     def parse_metadata(self):
         """
-        Returns data from metadata file. 
-        
-        The function that this calls in utils is lifted directly from
-        its equivalent function in process_mossbauer_files.py
+        Reads the masterfile. 
+
+        Returns
+        -------
+        self.meta
+            a dict representing the metadata from the masterfile
         """
         self.logger.debug('Loading masterfile...')
         self.meta = utils.parse_masterfile(self.paths['metadata'][0], self.superman_fields, self.logger)
@@ -64,14 +73,22 @@ class MossbauerImporter(_TrajectoryProcessor):
 
     def process_metadata(self, metadata, filename):
         """
-        Returns the metadata of a file
+        Processes the metadata for an individual file. 
 
-        Parameters: 
-        filename, the name of a file in string format that still contains 
-        an extension
-        metadata: an empty to which the metadata is added
+        Parameters
+        ---------- 
+        filename 
+            The name of a file in string format that still contains 
+            an extension.
+        metadata
+            The dict formed by parse_metadata above. 
+
+        Returns
+        -------
+        meta
+            A dict representing an individual file's metadata.
         """
-        pkeys = np.asarray(metadata[self.pkey_field], dtype=str) #for unicode
+        pkeys = np.asarray(metadata[self.pkey_field], dtype=str)
         meta_idx, = np.where(pkeys == self.get_id(filename))
         if len(meta_idx) != 1:
             self.logger.warning(f'Cannot match spectrum and masterfile {filename}')
@@ -86,16 +103,24 @@ class MossbauerImporter(_TrajectoryProcessor):
     
     def load_mossbauer_spectra(self, datafile):
         """
-        Version of load_spectra for mossbauer files
-        Parameter datafile: the second entry from a tuple representing a file
-        Returns the spectra of a file.
+        Gets spectra from a single file.
+
+        Parameters
+        ----------
+        datafile 
+            The second entry from a tuple representing a file.
+
+        Returns
+        -------
+        spectra
+            An individual file's spectra. 
+
         """
         spectra = []
         with open(datafile) as f:
             for line in itertools.islice(f, 10, None):
                 line = line.strip()
                 try:
-                    #make a list so that len will function as expected
                     row = list(map(float, line.split()))
                     if len(row) != 2:
                       self.logger.warning(f'Wrong data format in file {datafile}')
@@ -110,9 +135,19 @@ class MossbauerImporter(_TrajectoryProcessor):
     
     def process_spectra(self, datafile):
         """
-        Returns a single processed file from a batch of files, represented by
-        its spectra and metadata.
-        Parameter datafile: a single tuple representing a file
+        Processes a single file and returns both its spectra and metadata.
+
+        Parameters
+        ----------
+        datafile 
+            A single tuple representing a file.
+
+        Returns
+        -------
+        spectra
+            A single file's spectra.
+        meta
+            A dict of a single file's metadata.
         """
         result = self.load_mossbauer_spectra(datafile[1])
         if not result:
@@ -120,12 +155,7 @@ class MossbauerImporter(_TrajectoryProcessor):
         if isinstance(result, str):
             self.logger.warning(result)
             return 
-        #spectra starts as empty list in pmf 
         spectra = result
-        #this part lifted from process_spectra is pmf after meta is finished
-        #being made. self.n_chans replaced with self.channels, fname replaced
-        #with datafile, spectrum replaced with spectra
-        #PROBLEM: sometimes process_metadata doesn't return anything?
         meta = self.process_metadata(self.meta, filename=datafile[0])
         return spectra, meta
 

@@ -8,15 +8,15 @@ from ._base import _VectorProcessor
 
 class LIBSProcessor(_VectorProcessor):
     """
-    Inherits from _base.py
+    Inherits from BaseProcessor
     Processes spectra data from LIBS (i.e, ChemLIBS and SuperLIBS)
 
-    Implements these methods required by _base.py:
+    Implements these methods required by BaseProcessor:
     - get_id(filename): returns ID or None
     - parse_metadata(): returns parsed metadata structure
     - process_spectra(filename, metadata): return spectra, meta
 
-    Implements these members required by _base.py:
+    Implements these members required by BaseProcessor:
     - driver: family by default
     - file_ext: '_spect.csv' by default
     - pkey_field: 'Name' by default
@@ -49,15 +49,30 @@ class LIBSProcessor(_VectorProcessor):
 
     def get_id(self, filename):
         """
-        Returns a string representing the name of an individual spectra file
-        without the spect.csv suffix.
-        Parameters filename: the path to a spectra file
+        Retrieves the id of a file using the general LIBS
+        get_spectrum_id function from utils.py
+
+        Parameters
+        ----------
+        filename 
+            The path to a spectra file.
+
+        Returns
+        -------
+        data
+            A string representing the name of an individual spectra file
+            without the spect.csv suffix.
         """
         return utils.get_spectrum_id(filename)
 
     def get_input_data(self):
         """
-        Returns a dictionary of files in a directory.
+        Overwrites get_input_data in BaseProcessor.
+        
+        Returns
+        -------
+        data
+            A dictionary of files in a directory.
         """
         data = {}
         for dd in self.paths['data']:
@@ -73,18 +88,32 @@ class LIBSProcessor(_VectorProcessor):
 
     def parse_metadata(self):
         """
-        Returns data from Millennium_comps file.
+        Output logger message, then runs utils.py's 
+        parse_millenium_comps.
+
+        Returns
+        -------
+            Data from the metadata file.
         """
         self.logger.debug('Parsing metadata')
         return utils.parse_millennium_comps(self.paths['metadata'][0])
 
     def prepare_meta(self, meta, shot_num, name):
         """
-        Returns a dictionary of strings corresponding to metadata fields
+        Sets up each meta field and cleans values. 
 
-        Parameter meta: the metadata contents of a spectra file
-        Parameter shot_num: an numpy array
-        Parameter name: the name of a spectra file
+        Parameters 
+        ----------
+        meta 
+            The metadata contents of a spectra file.
+        shot_num 
+            A numpy array.
+        name 
+            The name of the file for which meta is being prepared.
+        
+        Returns
+        -------
+            A dictionary of meta fields to meta values.
         """
         all_samps, all_comps, all_noncomps = self.metadata
         elements = sorted(all_comps.keys())
@@ -143,10 +172,21 @@ class LIBSProcessor(_VectorProcessor):
 
     def process_spectra(self, datafile):
         """
-        Returns a processed single file from a batch of file,
-        including data and metadata
+        From a single datafile, retrieves their spectra and metadata,
+        while asserting certain properties.
 
-        Parameter datafile: a single tuple representing a file
+        Parameters
+        ----------
+        datafile
+            A single tuple representing a file.
+
+        Returns
+        -------
+        spectra
+            A single file's spectra values.
+        meta
+            A struct containing a single file's metadata values, 
+            including si_test value.
         """
         result = utils.load_spectra(datafile[1], self.channels)
         if not result:
@@ -172,7 +212,16 @@ class LIBSProcessor(_VectorProcessor):
 
     def write_data(self, filepath, all_spectra, all_meta):
         """
-        Override of _VectorImporter’s write_data() to output wavelengths
+        Override of _VectorImporter’s write_data() to output wavelengths.
+
+        Parameters
+        ----------
+        filepath : string
+            Target filename to write to.
+        all_spectra
+            Data to write.
+        all_meta
+            Metadata about spectra.
         """
         super().write_data(filepath, all_spectra, all_meta)
         if not os.path.isfile(self.paths['channels']):
