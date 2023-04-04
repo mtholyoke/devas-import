@@ -25,6 +25,3 @@ EOF
 endtime=$(date +%s)
 echo "### $(date) - Download finished after $((endtime - starttime)) seconds, starting processing." >> MSL_LOG
 
-# Add the new CCS files to the server-readable data
-python2.7 process_msl_files.py -o $CCS_PREFIX -i $CCS_ORIGINALS -m $CCS_DATA_DIR/$MASTER_FILE
-echo "### $(date +%s): Added new CCS files to ${CCS_PREFIX}.xxx.hdf5"

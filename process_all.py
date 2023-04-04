@@ -8,6 +8,7 @@ from argparse import ArgumentParser
 from processors import LIBSProcessor
 from processors import MossbauerImporter 
 from processors import RamanImporter
+from processors import MSLImporter
 
 
 
@@ -46,6 +47,7 @@ if __name__ == '__main__':
         'LIBS': LIBSProcessor,
         'Mossbauer' : MossbauerImporter,
         'Raman' : RamanImporter,
+        'MSL' : MSLImporter,
     }
 
     for dataset in config['datasets']:

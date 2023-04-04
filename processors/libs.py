@@ -59,7 +59,6 @@ class LIBSProcessor(_VectorProcessor):
 
         Returns
         -------
-        data
             A string representing the name of an individual spectra file
             without the spect.csv suffix.
         """

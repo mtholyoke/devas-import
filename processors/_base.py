@@ -7,19 +7,6 @@ import re
 import os
 from time import time, strftime
 
-"""
-Description
-
-Parameters
-----------
-p1:
-p2:
-
-Returns
----------
-"""
-
-
 class _BaseProcessor(object):
     """
     Abstract base class for processing spectrum data.
@@ -27,7 +14,7 @@ class _BaseProcessor(object):
     Requires implementations of these methods:
     - `get_id(filename)`: returns ID or None.
     - `parse_metadata()`: returns parsed metadata structure.
-    - `process_spectra(filename, metadata)`: return spectra, meta.
+    - `process_spectra(datafile)`: return spectra, meta.
     - `write_data(output_pattern, all_spectra, all_meta)`
 
     Requires implementations of these members:

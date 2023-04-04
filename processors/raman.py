@@ -9,7 +9,7 @@ from os.path import basename
 class RamanImporter(_TrajectoryProcessor):
     """
     Inherits from BaseProcessor
-    Processes spectra data from Mossbauer
+    Processes spectra data from Raman
 
     Implements these methods required by BaseProcessor:
     - get_id(filename) returns ID or None
@@ -136,7 +136,7 @@ class RamanImporter(_TrajectoryProcessor):
         #datafile is a tuple, so get the second value which is the path
         meta_idx, = np.where(pkeys == self.get_id(datafile[1]))
         if len(meta_idx) < 1:
-            #self.logger.warning(f'Cannot match spectra and masterfile {datafile[1]}')
+            self.logger.warning(f'Cannot match spectra and masterfile {datafile[1]}')
             return
         meta = {key: val[meta_idx[0]] for key, val in self.meta.items()}
 
