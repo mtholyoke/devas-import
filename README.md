@@ -25,25 +25,8 @@ Before running `process_all.py` the first time, copy `config-sample.yml` to `con
 
 NOTE: The files in this branch is in active development.
 
-### `README.md`
+None currently. 
 
-README.md is current being updated to reflect Python 3 changes. 
-
-### `cron_script.sh`
-
-Under testing for Python 3 changes.
-
-### `mirror_pds.sh`
-
-Under testing for Python 3 changes.
-
-### `process_all.py`
-
-Testing addition of MSL files.
-
-### `processors/msl.py`
-
-Testing adaptation of `process_msl_files.py` to Python 3.
 
 
 ## Contents updated to Python 3.
