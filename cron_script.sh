@@ -6,14 +6,15 @@ TODAY=$(date +%D)
 
 cd "$WORK_DIR"
 
-./mirror_pds.sh > daily_pds.log 2>&1
+./mirror_pds.py > daily_pds.log 2>&1
 if [[ $? -ne 0 ]]; then
   mail -s "MSL daily download failed on $TODAY" $CRONMASTER <daily_pds.log
 fi
 
-./run-mhc-datasets.sh > daily_mhc.log 2>&1
+./process_all.py > daily_mhc.log 2>&1
 if [[ $? -ne 0 ]]; then
   mail -s "MHC daily rsync failed on $TODAY" $CRONMASTER <daily_mhc.log
 fi
+
 
 # Regardless of failure or success, keep the logs around until tomorrow.

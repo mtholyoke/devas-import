@@ -6,9 +6,23 @@ import openpyxl
 import os
 from collections import defaultdict
 from glob import glob
+from openpyxl import load_workbook
+from time import time
 
 
 def can_be_float(string):
+    """
+    Determines if a given string can become a float. 
+   
+    Parameters
+    ----------
+    string
+        String to be tested.
+    
+    Returns
+    -------
+        Boolean reflecting whether the string can be a float.
+    """
     try:
         float(string)
     except Exception:
@@ -17,19 +31,86 @@ def can_be_float(string):
         return True
 
 
-# Scan the data directory for *_spect.csv files.
-# Note: this requires the files be in 1 level of subdirectory.
+def clean_data(string, cast=int, default=0):
+    """
+    Takes a string and strips it of non-numerical characters. 
+
+    Parameters
+    ----------
+    string 
+        A metadata value that should be numeric.
+    cast 
+        What numeric type (int or float) to return.
+    default
+        Default value if string is empty after cleanup.
+
+    Returns
+    -------
+        Cleaned string cast as given datatype. 
+    """
+    charset = [str(x) for x in range(0, 10)] + ['-']
+    if cast is float:
+        charset.append('.')
+    for char in string:
+        if char not in charset:
+            string = string.replace(char, '')
+    if string == '':
+        string = default
+    return cast(string)
+
+
 def find_spectrum_files(input_dir, file_ext):
+    """
+    Scans the data directory for particular file type and return a list of those files.
+    Used primarily to scan for *_spect.csv. Files must be in 1 level of 
+    subdirectory.
+
+    Parameters
+    ---------- 
+    input_dir 
+        The directory to scan through.
+    file_ext 
+        The file extension to be searched for.
+
+    Returns
+    -------
+        A list of files to process. 
+    """
     fpattern = os.path.join(input_dir, '*', f'*{file_ext}')
     return [f for f in glob(fpattern)
             if '_TI_' not in f.upper() and '_DARK_' not in f.upper()]
 
 
 def get_directory(filepath):
+    """
+    Finds the directory a given file is in. 
+
+    Parameters
+    ----------
+    filepath
+        The full path of a file. 
+
+    Returns
+    ------- 
+        The name of the directory a file is in.
+    """
     return os.path.basename(os.path.dirname(filepath))
 
 
 def get_element_columns(sheet):
+    """
+    Gets the element columns from the metadata sheet (LIBS).
+    Parameters
+    ----------
+    sheet
+        the metadata sheet.
+
+    Returns
+    -------
+    elem_cols
+        an array of elements from the sheet.
+    
+    """
     elem_cols = []
     for col, _ in enumerate(sheet.columns, start=1):
         check = sheet.cell(row=1, column=col).value
@@ -42,10 +123,24 @@ def get_element_columns(sheet):
     return elem_cols
 
 
-# Truncates "_spect.csv" from the filename to get the ID.
 def get_spectrum_id(filename):
+    """
+    Truncates "_spect.csv" from the filename to get ID. Note:
+    is explicitly for that, not other file types.
+
+    Parameters
+    ----------
+    filename
+        a string representing the full name of the file.
+
+    Returns
+    -------
+    name[:-6]
+        the name of the file, minus the '_spect.csv' ending.
+    
+    """
     name, _ = os.path.splitext(os.path.basename(filename))
-    name = name.decode() if isinstance(name, bytes)
+    name = name.decode() if isinstance(name, bytes) else name
     if not name.endswith('_spect') or len(name) < 7:
         return None
     return name[:-6]
@@ -56,13 +151,30 @@ META_FIELDS = ['Carousel', 'Sample', 'Target', 'Location', 'Atmosphere',
 
 
 def load_spectra(filepath, channels=None):
-    # TODO: One draft included `encoding='latin1'` in the following.
-    # Should be 'latin-1' if we need it, or delete this comment if not.
+    """
+    Loads the spectra from a single spectra file.
+
+    Parameters
+    ----------
+    filepath
+        the full path of a spectra file.
+    channels
+        number of channels (usually as self.channels).
+
+    Returns
+    ------
+    data.T
+        the spectra of the file. 
+    meta
+        a dict of meta fields to their values.
+    prepro
+        a bool is spectra is prepro.
+    """
     with open(filepath, 'r') as f:
         contents = list(csv.reader(f, quotechar='+'))
     meta = {}
     prepro = True
-    # Spectra are assumed to start at first line of comma-separated data
+    # Spectra are assumed to start at first line of all numeric data
     for i, line in enumerate(contents):
         if isinstance(line, bytes):
             line = line.decode()
@@ -81,7 +193,7 @@ def load_spectra(filepath, channels=None):
             if field in META_FIELDS:
                 meta[field] = val
         elif all(can_be_float(item) for item in line):
-            if '.' not in line:
+            if '.' not in ''.join(line):
                 # All integers means this is formatted.
                 prepro = False
             break
@@ -101,6 +213,24 @@ def load_spectra(filepath, channels=None):
 
 
 def parse_millennium_comps(filepath):
+    """
+    Parses LIBS Millennium_comps file. 
+
+    Parameters
+    ----------
+    filepath
+        the full path to a Millennium-comps file.
+
+    Returns
+    -------
+    samples
+        the names of samples. 
+    compositions
+        a dictionary of lists with elements as keys.
+    noncomps
+        all other data within millennium_comps not contained in samples
+        or compositions.
+    """
     book = openpyxl.load_workbook(filepath, data_only=True)
     sheet = book.active
     elem_cols = get_element_columns(sheet)
@@ -130,3 +260,61 @@ def parse_millennium_comps(filepath):
                 compositions[elem].append(np.nan)
     noncomps = [rock_types, randoms, matrices, dopants, projects]
     return samples, compositions, noncomps
+
+def parse_masterfile(cfile, fields, logger):
+    """
+    Parses the masterfile for non-libs processors. Includes Raman id 
+    modification.
+
+    Parameters
+    ----------
+    cfile
+        the path to the masterfile.
+    fields
+        superman fields, or pkey depending on Mossbauer vs. Raman.
+    logger
+        logger passed in from processer for warning purposes.
+
+    Returns
+    -------
+    meta
+        a dict of lists where each meta category maps to all its values
+        from the masterfile. 
+    """
+    # Check if it's raman.
+    isMossbauer = fields != 'spectrum_number'
+    start = time()
+    book = load_workbook(cfile, data_only=True)
+    sheet = book.active
+    for row in sheet.iter_rows(min_row=1, max_row=1):
+        headers = [cell.value for cell in row]
+    meta = defaultdict(list)
+    if isMossbauer:
+        id_ind = headers == next(iter(fields))
+    # For Raman, keep fields.
+    else:
+        id_ind = headers==fields
+    for i, row in enumerate(sheet.rows):
+        if i < 1 or row[id_ind].value is None:
+            continue
+        if isMossbauer:
+            for header, cell in zip(headers, row):
+                if header in fields:
+                    if header == 'Dana Group' and not cell.value:
+                        cell.value = 'n/a'
+                    meta[header].append(cell.value)
+        else: 
+            val_list = str(row[0].value).split('_')
+            val = val_list[0]
+            for i in range(1, len(val_list)):
+                val = val + "_" + val_list[i]
+            row[0].value = val
+            for header, cell in zip(headers, row):
+                if header == 'spectrum_number':
+                    if cell.value in meta[header]:
+                        logger.warn('Duplicate value: ', cell.value)
+                if header is not None:
+                    meta[header].append(cell.value)
+    return meta
+
+
