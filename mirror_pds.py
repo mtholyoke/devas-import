@@ -4,6 +4,7 @@
 import logging
 import os
 import yaml
+import subprocess
 from datetime import datetime
 import subprocess as sp
 from argparse import ArgumentParser
@@ -31,8 +32,8 @@ def mirror_pds(msl_dataset, script_dir):
     f.write("### " + str(date) + " - Starting MSL data downloads")
     f.close()
 
-    command_1 = f'"get -O {data_dir} document/{meta_file}" {remote_processed}'
-
+    #if overwrite is needed, turn xfer:clobber on (see lftp docs)
+    command_1 = f'"get -O {data_dir} document/{meta_file}  -o {data_dir}/{meta_file}" {remote_processed}'
     command_2 = f'"mirror -c -I cl5_*ccs_*.csv --no-empty-dirs data {originals}" {remote_processed}'
     
     os.system("/usr/bin/lftp -e " + command_1)

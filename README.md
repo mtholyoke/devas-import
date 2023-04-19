@@ -16,7 +16,7 @@ The code was developed in Python 3.9.6 with these packages:
 - `pyyaml` 5.4.1
 These version are accurate as of March 27, 2023. 
 
-The `mirror_pds.sh` driver script currently uses the [`lftp` utility](https://lftp.yar.ru/), which is available via `apt` for Debian and Ubuntu.
+The `mirror_pds.sh` driver script currently uses the [`lftp` utility](https://lftp.yar.ru/), which is available via `apt` for Debian and Ubuntu. Additionally, it used the the mail command, which is available with `apt install mailutils`.
 
 Before running `process_all.py` the first time, copy `config-sample.yml` to `config.yml` and edit the latter’s contents.
 
@@ -28,7 +28,6 @@ NOTE: The files in this branch is in active development.
 None currently. 
 
 
-
 ## Contents updated to Python 3.
 
 ### Driver script `mirror_pds.sh`
@@ -36,6 +35,8 @@ None currently.
 Downloads MSL files from the Planetary Data Science repository at WUSTL, then runs processing scripts on them.
 
 Some previous code (removed by commit `213d47e` in this repo) ran additional predictive models on this data, but the scripts were missing some component files by the time we got this code, and we have no way to regenerate them.
+
+Converting to a Python file as of 4/19/2023. Note that it currently runs using os.system: subprocess is the current standard, but issues were encountered when implementing it with lftp. 
 
 ### Driver script `cron_script.sh`
 
