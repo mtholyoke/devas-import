@@ -57,6 +57,7 @@ if __name__ == '__main__':
         if 'type' not in dataset:
             logging.error(f'Dataset {dataset.name} missing type; skipping')
             continue
+        # TODO: this is also in mirror_pds.py; move to utils?
         global_config = ['root_dir', 'chunk_size']
         for attr in global_config:
             dataset[attr] = config[attr]

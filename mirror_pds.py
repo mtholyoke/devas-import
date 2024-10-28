@@ -1,50 +1,57 @@
 #!/usr/bin/env python3
-#run in container with lftp installed
 
 import logging
 import os
+import sys
 import yaml
-import subprocess
 from datetime import datetime
-import subprocess as sp
 from argparse import ArgumentParser
-from process_all import logging_setup
+
+# TODO: this copied from process_all.py; move it back over and import
+def logging_setup(log_cfg):
+    defaults = {
+        'datefmt': '%Y-%m-%d %H:%M:%S',
+        'format': '%(asctime)s - %(levelname)s - %(message)s',
+        'level': logging.INFO,
+        'stream': sys.stdout,
+    }
+    if not log_cfg:
+        log_cfg = {}
+    for key, value in defaults.items():
+        if key not in log_cfg:
+            log_cfg[key] = value
+    if 'filename' in log_cfg and log_cfg['filename']:
+        del log_cfg['stream']
+    if isinstance(log_cfg['level'], str):
+        log_cfg['level'] = getattr(logging, log_cfg['level'], logging.INFO)
+    logging.basicConfig(**log_cfg)
 
 def mirror_pds(msl_dataset, script_dir):
     remote_processed = "ftp://pds-geosciences.wustl.edu/msl/msl-m-chemcam-libs-4_5-rdr-v1/mslccm_1xxx"
-    meta_file = msl_dataset['meta_file']
 
-    if not script_dir:
-        script_dir = "/app"
-
-    msl_dir = script_dir + "/data"
-    data_dir = msl_dir + "/" + msl_dataset['base_dir']
-    output_prefix = data_dir + "/" + msl_dataset['output_prefix']
-    originals = data_dir + "/" + msl_dataset['data_dir']
+    # TODO: adapted from processors/_base.py; refactor?
+    base_dir = os.path.join(msl_dataset['root_dir'], msl_dataset['base_dir'])
+    meta_file = os.path.join(base_dir, msl_dataset['meta_file'])
+    data_dir = os.path.join(base_dir, msl_dataset['data_dir'])
 
     date = datetime.now()
-    nemo_root = "cj@nemo.mtholyoke.edu:/home/cj/datafiles"
-    msl_log = data_dir + "/nightly-logs/MSL-" + date.strftime("%Y-%m-%d") + ".log"
 
     logging.info("Running MSL-PDS dataset")
     starttime = datetime.now()
-    f = open(msl_log, "w")
-    f.write("### " + str(date) + " - Starting MSL data downloads")
-    f.close()
+    print("### " + str(date) + " - Starting MSL data downloads")
 
-    #if overwrite is needed, turn xfer:clobber on (see lftp docs)
-    command_1 = f'"get -O {data_dir} document/{meta_file}  -o {data_dir}/{meta_file}" {remote_processed}'
-    command_2 = f'"mirror -c -I cl5_*ccs_*.csv --no-empty-dirs data {originals}" {remote_processed}'
+    # If overwrite is needed, turn xfer:clobber on (see lftp docs).
+    command_1 = f'"get document/msl_ccam_obs.csv -o {meta_file}" {remote_processed}'
+    command_2 = f'"mirror -c -I cl5_*ccs_*.csv --no-empty-dirs data {data_dir}" {remote_processed}'
     
+    print("###" + str(datetime.now()) + " - /usr/bin/lftp -e " + command_1)
     os.system("/usr/bin/lftp -e " + command_1)
+    print("###" + str(datetime.now()) + " - /usr/bin/lftp -e " + command_1)
     os.system("/usr/bin/lftp -e " + command_2)
 
     endtime = datetime.now()
     time_dif = endtime - starttime
-    f = open(msl_log, 'a')
-    f.write("###" + str(date) + " – Download finished after " 
-            + str(time_dif.total_seconds()) + " seconds, starting processing.")
-    f.close()
+    print("###" + str(endtime) + " – Download finished after " + str(time_dif.total_seconds()) + " seconds.")
 
     return
 
@@ -61,7 +68,11 @@ if __name__ == '__main__':
     logging_setup(config['logging'])
 
     for dataset in config['datasets']:
-        #only run the mirror_pds part of this is MSL is present
+        # Only run the mirror_pds part of this if MSL is present.
         if dataset['name'] == 'MSL':
+            # TODO: this is also in process_all.py; move to utils?
+            global_config = ['root_dir', 'chunk_size']
+            for attr in global_config:
+                dataset[attr] = config[attr]
             mirror_pds(dataset, script_dir)
 
