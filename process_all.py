@@ -6,13 +6,14 @@ import sys
 import yaml
 from argparse import ArgumentParser
 from processors import LIBSProcessor
-from processors import MossbauerImporter 
+from processors import MossbauerImporter
 from processors import RamanImporter
 from processors import MSLImporter
 
+GLOBAL_CONFIG = ['root_dir', 'chunk_size']
 
 
-def logging_setup(log_cfg): 
+def logging_setup(log_cfg):
     defaults = {
         'datefmt': '%Y-%m-%d %H:%M:%S',
         'format': '%(asctime)s - %(levelname)s - %(message)s',
@@ -45,9 +46,9 @@ if __name__ == '__main__':
 
     processor = {
         'LIBS': LIBSProcessor,
-        'Mossbauer' : MossbauerImporter,
-        'Raman' : RamanImporter,
-        'MSL' : MSLImporter,
+        'Mossbauer': MossbauerImporter,
+        'Raman': RamanImporter,
+        'MSL': MSLImporter,
     }
 
     for dataset in config['datasets']:
@@ -57,10 +58,7 @@ if __name__ == '__main__':
         if 'type' not in dataset:
             logging.error(f'Dataset {dataset.name} missing type; skipping')
             continue
-        # TODO: this is also in mirror_pds.py; move to utils?
         global_config = ['root_dir', 'chunk_size']
         for attr in global_config:
             dataset[attr] = config[attr]
         processor[dataset['type']](**dataset).main()
-        
-        
