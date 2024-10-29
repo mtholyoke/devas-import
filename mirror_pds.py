@@ -6,35 +6,38 @@ import yaml
 from argparse import ArgumentParser
 from datetime import datetime
 from process_all import GLOBAL_CONFIG, logging_setup
+from urllib.parse import unsplit
 
 
-def mirror_pds(msl_dataset, script_dir):
-    remote_processed = "ftp://pds-geosciences.wustl.edu/msl/msl-m-chemcam-libs-4_5-rdr-v1/mslccm_1xxx"
+# TODO: this should be moved into processors/_base.py.
+def download(dataset):
+    if "download" not in dataset:
+        return
+    d = dataset["download"]
+    remote = unsplit((d["scheme"], d["netloc"], d["path"], "", ""))
 
-    # TODO: adapted from processors/_base.py; refactor?
-    base_dir = os.path.join(msl_dataset['root_dir'], msl_dataset['base_dir'])
-    meta_file = msl_dataset['meta_file']
+    base_dir = os.path.join(dataset["root_dir"], dataset["base_dir"])
+    meta_file = dataset["meta_file"]
     meta_path = os.path.join(base_dir, meta_file)
-    data_dir = os.path.join(base_dir, msl_dataset['data_dir'])
+    data_dir = os.path.join(base_dir, dataset["data_dir"])
 
-    date = datetime.now()
-
-    logging.info("Running MSL-PDS dataset")
-    starttime = datetime.now()
-    print("### " + str(date) + " - Starting MSL data downloads")
+    logging.info(f'Running {dataset["name"]} dataset; starting download')
+    start_time = datetime.now()
+    backup_stamp = start_time.isoformat(timespec="seconds")
+    os.system(f'mv {meta_path} {meta_path}.{os.getpid()}.{backup_stamp}')
 
     # If overwrite is needed, turn xfer:clobber on (see lftp docs).
-    command_1 = f'"get document/{meta_file} -o {meta_path}" {remote_processed}'
-    command_2 = f'"mirror -c -I cl5_*ccs_*.csv --no-empty-dirs data {data_dir}" {remote_processed}'
+    lftp_commands = [
+        f'"get1 document/{meta_file} -o {meta_path}"'
+        f'"mirror -c -I cl5_*ccs_*.csv --no-empty-dirs data {data_dir}"'
+    ]
+    for lftp_command in lftp_commands:
+        executable = f'/usr/bin/lftp -e {lftp_commmand} {remote}'
+        logging.debug(executable)
+        os.system(executable)
 
-    print("###" + str(datetime.now()) + " - /usr/bin/lftp -e " + command_1)
-    os.system("/usr/bin/lftp -e " + command_1)
-    print("###" + str(datetime.now()) + " - /usr/bin/lftp -e " + command_1)
-    os.system("/usr/bin/lftp -e " + command_2)
-
-    endtime = datetime.now()
-    time_dif = endtime - starttime
-    print("###" + str(endtime) + " – Download finished after " + str(time_dif.total_seconds()) + " seconds.")
+    time_diff = (datetime.now() - start_time).total_seconds()
+    logging.info(f'Download finished after {time_diff} sec')
 
     return
 
@@ -56,4 +59,4 @@ if __name__ == '__main__':
     for dataset in datasets:
         for attr in GLOBAL_CONFIG:
             dataset[attr] = config[attr]
-        mirror_pds(dataset, script_dir)
+        download(dataset)

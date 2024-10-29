@@ -7,6 +7,7 @@ import re
 import os
 from time import time, strftime
 
+
 class _BaseProcessor(object):
     """
     Abstract base class for processing spectrum data.
@@ -38,7 +39,7 @@ class _BaseProcessor(object):
             'log_dir': 'nightly-logs',
             'output_dir': 'to-DEVAS',
             'output_prefix': 'prepro_no_blr',
-            'channels_file': 'prepro_channels.npy'
+            'channels_file': 'prepro_channels.npy',
         }
         for key, value in defaults.items():
             if not hasattr(self, key):
@@ -142,7 +143,7 @@ class _BaseProcessor(object):
         -------
         logger
             A logger for use throughout BaseProcessor and its children,
-            used primarily to output warnings and errors. 
+            used primarily to output warnings and errors.
         """
         handler = logging.FileHandler(self.paths['log'])
         handler.setFormatter(self.logger.handlers[0].formatter)
@@ -159,7 +160,7 @@ class _BaseProcessor(object):
         Returns
         -------
         data
-            A dictionary where keys are directories to be checked for 
+            A dictionary where keys are directories to be checked for
             data files, and values are lists of tuples that follow the
             format (ID, filename)
         """
@@ -169,19 +170,20 @@ class _BaseProcessor(object):
             data[base] = []
             for root, _, filenames in os.walk(input_dir):
                 for filename in filenames:
-                    if filename.lower().endswith(self.file_ext.lower()):
-                        fid = self.get_id(filename)
-                        if fid is not None:
-                            if not self.is_raman():
-                                full_filename = os.path.join(root, filename)
-                                data[base].append((fid, full_filename))
-                            if self.is_raman():
-                                full_filename = os.path.join(root, filename)
-                                # As code in process spectra in raman
-                                is_underscored = self.is_underscored(full_filename)
-                                if is_underscored:
-                                    fid = fid + "_" + is_underscored
-                                data[base].append((fid, full_filename))
+                    if not filename.lower().endswith(self.file_ext.lower()):
+                        continue
+                    fid = self.get_id(filename)
+                    if fid is None:
+                        continue
+                    if self.is_raman():
+                        full_filename = os.path.join(root, filename)
+                        # As code in process spectra in raman
+                        is_underscored = self.is_underscored(full_filename)
+                        if is_underscored:
+                            fid = fid + "_" + is_underscored
+                    else:
+                        full_filename = os.path.join(root, filename)
+                    data[base].append((fid, full_filename))
 
         return data
 
@@ -189,9 +191,9 @@ class _BaseProcessor(object):
         """
         Finds the ids that have already been processed in a previous run
         in order to exclude them from reprocessing later. Ensures
-        Raman data is not pickled. 
-        
-        Returns 
+        Raman data is not pickled.
+
+        Returns
         -------
             List of the spectra present in previous output.
         """
@@ -200,14 +202,14 @@ class _BaseProcessor(object):
         self.logger.debug(f'Checking for previous output file {filepath}')
         if not os.path.isfile(filepath):
             return []
-        meta = np.load(filepath, allow_pickle = not self.is_raman())
+        meta = np.load(filepath, allow_pickle=(not self.is_raman()))
         ids = meta[self.pkey_field]
         return [x.decode() if isinstance(x, bytes) else x for x in ids]
 
     def is_trajectory(self):
         """
         By default, not trajectory. Overriden in TrajectoryProcessor
-        to return True. 
+        to return True.
 
         Returns
         -------
@@ -217,9 +219,9 @@ class _BaseProcessor(object):
 
     def is_raman(self):
         """
-        Return a boolean that indicated it is not a Raman processor. 
+        Return a boolean that indicated it is not a Raman processor.
         Overriden in RamanImporter.
-        
+
         Returns
         -------
             False.
@@ -388,16 +390,15 @@ class _VectorProcessor(_BaseProcessor):
         Parameters
         ----------
         datafile
-            The tuple of (ID, file's full path) representing a single 
-            file. 
+            Tuple (ID, file’s full path) representing a single file.
 
         Returns
         -------
         spectra
-            spectra as per process_spectra. 
+            spectra as per process_spectra().
         meta
             A dict of metadata fields to the metadata values of those fields
-            for an individual sample. As process_spectra. 
+            for an individual sample as per process_spectra().
         """
         spectra, meta = super().process_file(datafile)
         if spectra is None or meta is None:
@@ -448,7 +449,7 @@ class _TrajectoryProcessor(_BaseProcessor):
 
         Returns
         -------
-            True. 
+            True.
         """
         return True
 
