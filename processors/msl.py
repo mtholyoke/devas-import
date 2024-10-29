@@ -3,7 +3,8 @@ import os
 import re
 from ._base import _VectorProcessor
 
-class MSLImporter(_VectorProcessor):
+
+class MSLProcessor(_VectorProcessor):
     """
     Inherits from VectorProcessor from BaseProcessor
     Processes spectra data from MSL (i.e, NASA data)
@@ -20,7 +21,7 @@ class MSLImporter(_VectorProcessor):
 
     logger: for logging errors
     metadata: to ensure that metadata can be used through processor
-    but still respects process_spectra single argument. 
+    but still respects process_spectra single argument.
     """
     def __init__(self, **kwargs):
         self.metadata = {}
@@ -31,14 +32,14 @@ class MSLImporter(_VectorProcessor):
             if not hasattr(self, attr):
                 raise AttributeError(f'Attribute "{attr}" is required')
         defaults = {
-            'driver' : 'family',
-            'file_ext' : '.csv',
-            'pkey_field' : 'ids',
+            'driver': 'family',
+            'file_ext': '.csv',
+            'pkey_field': 'ids',
         }
         for key, value in defaults.items():
             if not hasattr(self, key):
                 setattr(self, key, value)
-    
+
     def get_id(self, filename):
         """
         Gets the id of a file.
@@ -53,8 +54,7 @@ class MSLImporter(_VectorProcessor):
             A string representation of that file name without ending.
         """
         parts = filename.split('_')
-        return parts[1].rstrip('ccs') if len(parts)==3 else None
-    
+        return parts[1].rstrip('ccs') if len(parts) == 3 else None
 
     def get_processed_ids(self):
         """
@@ -62,12 +62,11 @@ class MSLImporter(_VectorProcessor):
 
         Returns
         -------
-            IDs that have already been run. 
+            IDs that have already been run.
         """
         raw_ids = super().get_processed_ids()
         return [id[7:] for id in raw_ids]
 
-    
     def make_meta(self, datafile, include_mean_spectrum=False):
         """
         Generates the metadata for MSL files.
@@ -75,13 +74,13 @@ class MSLImporter(_VectorProcessor):
         Parameters
         ----------
         datafile
-            A tuple representing a file. 
+            A tuple representing a file.
         include_mean_spectrum
             A boolean that controls whether or not 0 is include in shot_num.
-        
+
         Returns
         -------
-            A dict of meta categories to their values. 
+            A dict of meta categories to their values.
         """
         meta_idx = self.match_metadata(datafile[1])
         if meta_idx is None:
@@ -109,7 +108,7 @@ class MSLImporter(_VectorProcessor):
         Parameters
         ----------
         filename
-            The full path of a file. 
+            The full path of a file.
 
         Returns
         -------
@@ -145,11 +144,11 @@ class MSLImporter(_VectorProcessor):
         -------
             The spectra of a file.
         """
-        data = np.genfromtxt(filename, delimiter = ',')
+        data = np.genfromtxt(filename, delimiter=',')
         shots = data[:, 1:-2].T
         mean_spectrum = data[:, -1].T
         return np.row_stack((mean_spectrum, shots))
-    
+
     def parse_metadata(self):
         """
         Required from base.py. Assigns metadata to self.metadata.
@@ -157,27 +156,27 @@ class MSLImporter(_VectorProcessor):
         Returns
         -------
         metadata
-            The metadata from MSL masterfile. 
+            The metadata from MSL masterfile.
         """
         self.metadata = self.parse_masterfile(self.paths['metadata'][0])
         return self.metadata
-    
+
     def parse_masterfile(self, metapath):
         """
-        Initializes metadata from masterfile. 
+        Initializes metadata from masterfile.
 
         Parameters
         ----------
         metapath
-            The path to the MSL masterfile. 
-        
+            The path to the MSL masterfile.
+
         Returns
         -------
-            The metadata from that file. 
+            The metadata from that file.
         """
-        return np.recfromcsv(metapath, names = True, 
-                             invalid_raise = False, comments = '"')
-    
+        return np.recfromcsv(metapath, names=True,
+                             invalid_raise=False, comments='"')
+
     def process_spectra(self, datafile):
         """
         Parameters
@@ -190,14 +189,13 @@ class MSLImporter(_VectorProcessor):
         spectra
             A single file's spectra values.
         meta
-            A struct containing a single file's metadata values, 
+            A struct containing a single file's metadata values,
             including si_test value.
         """
         spectra = self.parse_csv(datafile[1])
-        if (spectra.ndim == 1 and spectra.shape[0]!=self.channels) or \
-        (spectra.ndim == 2 and spectra.shape[1] !=self.channels):
+        if (spectra.ndim == 1 and spectra.shape[0] != self.channels) or \
+           (spectra.ndim == 2 and spectra.shape[1] != self.channels):
             self.logger.warning("Problem encountered with spectra.ndim or spectra.shape.")
             return
         meta = self.make_meta(datafile, True)
         return spectra, meta
-    

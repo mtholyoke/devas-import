@@ -7,14 +7,18 @@ root_dir: /data
 # How many data files to process in each batch (default 500).
 # batch_size: 500
 
+
+### Dataset configuration
+
 # The list of datasets to be run by process_all.py.
 # Set averaged to True if the dataset is already aggregated.
 # If base_dir does not start with /, it is appended to root_dir.
-# If metadata, data_dir, log_dir, or output_dir do not start with /,
+# If meta_file, data_dir, log_dir, or output_dir do not start with /,
 # they are appended to base_dir.
 # meta_file may be a list for some dataset types.
 # data_dir can be a list or a string.
 # Only the commented rows below have default values.
+
 datasets:
   - name: MHC ChemLIBS
     type: LIBS
