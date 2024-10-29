@@ -6,7 +6,7 @@ import yaml
 from argparse import ArgumentParser
 from datetime import datetime
 from process_all import GLOBAL_CONFIG, logging_setup
-from urllib.parse import unsplit
+from urllib.parse import urlunsplit
 
 
 # TODO: this should be moved into processors/_base.py.
@@ -14,7 +14,7 @@ def download(dataset):
     if "download" not in dataset:
         return
     d = dataset["download"]
-    remote = unsplit((d["scheme"], d["netloc"], d["path"], "", ""))
+    remote = urlunsplit((d["scheme"], d["netloc"], d["path"], "", ""))
 
     base_dir = os.path.join(dataset["root_dir"], dataset["base_dir"])
     meta_file = dataset["meta_file"]
@@ -28,11 +28,11 @@ def download(dataset):
 
     # If overwrite is needed, turn xfer:clobber on (see lftp docs).
     lftp_commands = [
-        f'"get1 document/{meta_file} -o {meta_path}"'
-        f'"mirror -c -I cl5_*ccs_*.csv --no-empty-dirs data {data_dir}"'
+        f'"get1 document/{meta_file} -o {meta_path}"',
+        f'"mirror -c -I cl5_*ccs_*.csv --no-empty-dirs data {data_dir}"',
     ]
     for lftp_command in lftp_commands:
-        executable = f'/usr/bin/lftp -e {lftp_commmand} {remote}'
+        executable = f'/usr/bin/lftp -e {lftp_command} {remote}'
         logging.debug(executable)
         os.system(executable)
 
