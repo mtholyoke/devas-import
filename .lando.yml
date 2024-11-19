@@ -1,9 +1,9 @@
 name: devas-import
 services:
   appserver:
-    type: python:3.7
-    build_as_root:
-      - /app/.lando/build_as_root.sh
+    type: python:3.10
+    build:
+      - /app/.lando/build.sh
 tooling:
   process:
     service: appserver

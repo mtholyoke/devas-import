@@ -6,6 +6,11 @@ import sys
 import yaml
 from argparse import ArgumentParser
 from processors import LIBSProcessor
+from processors import MossbauerImporter
+from processors import RamanImporter
+from processors import MSLProcessor
+
+GLOBAL_CONFIG = ['root_dir', 'chunk_size']
 
 
 def logging_setup(log_cfg):
@@ -41,6 +46,9 @@ if __name__ == '__main__':
 
     processor = {
         'LIBS': LIBSProcessor,
+        'Mossbauer': MossbauerImporter,
+        'Raman': RamanImporter,
+        'MSL': MSLProcessor,
     }
 
     for dataset in config['datasets']:
