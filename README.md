@@ -1,77 +1,64 @@
 # devas-import
 
-Scripts for aggregating and preprocessing data for [Superman](https://github.com/all-umass/superman) service running at http://nemo.mtholyoke.edu and [Specx](https://github.com/mtholyoke/specx) service running at https://mossbauer.mtholyoke.edu.
+Scripts for aggregating and preprocessing data for [DEVAS Web](https://github.com/mtholyoke/devas-web) (formerly [superman-web](https://github.com/all-umass/superman-web)) service running at http://nemo.mtholyoke.edu and [Specx](https://github.com/mtholyoke/specx) service running at https://mossbauer.mtholyoke.edu.
 
 The code here was adapted from original work by [@perimosocordiae](https://github.com/perimosocordiae).
 
+
+
 ## Requirements
 
-Currently the processing scripts only run in Python 2.7. You’ll need to negotiate compatible versions of h5py, openpyxl, and numpy.
+The current production environment is an Ubuntu 22.04 server running Python 3.10.12 with the modules listed in `requirements.txt`. See the [DEVAS web](https://github.com/mtholyoke/devas-web) repo for notes on installing the [Superman](https://github.com/all-umass/superman) library.
 
-The `mirror_pds.sh` driver script currently uses the [`lftp` utility](https://lftp.yar.ru/).
+The `mirror_pds.py` driver script currently uses the [`lftp` utility](https://lftp.yar.ru/), which is available via `apt` for Debian and Ubuntu.
 
-The `web_model.py` script requires the [Superman](https://github.com/all-umass/superman) library
+Before running either script the first time, copy `config-sample.yml` to `config.yml` and edit the latter’s contents.
 
-**TODO:** Upgrade the code to run in Python 3.8, remove the need for `lftp`, and document the versions better.
+In practice, it’s useful to have a small driver script to be called by `cron` that runs the script(s) and copies the output to the DEVAS Web server.
 
-**TODO:** Current server needs an upgrade; don’t forget to fix directory names for new permanent home.
 
-## Active Contents
 
-### Driver script `run-mhc-datasets.sh`
-
-There are currently four local datasets receiving updates: MHC Mossbauer, MHC Raman, MHC ChemLIBS, and MHC SuperLIBS 5120. This script runs their individual processing scripts (listed below), `rsync`s the results to the appropriate directory on the DEVAS server, then triggers a data reload on that server. It’s currently run nightly by `/etc/crontab`.
-
-We expect two more SuperLIBS datasets in the near future.
-
-#### `_mhc_utils.py`
-
-Common utilities for the processor scripts below.
-
-#### `importer.py`
-
-Base classes for the processor scripts below.
-
-#### `process_mhc_files.py`
-
-This script processes LIBS data; it’s used by the MHC ChemLIBS dataset.
-
-#### `process_mossbauer_files.py`
-
-This script processes Mössbauer data; it’s used by the MHC Mossbauer dataset.
-
-#### `process_raman_files.py`
-
-This script processes Raman data; it’s used by the MHC Raman dataset.
-
-#### `process_superlibs_files.py`
-
-This script processes LIBS data; it’s used by the MHC SuperLIBS 5120 dataset. In the future, it may need to be split into vector and trajectory versions.
-
-## Inactive contents
-
-### Driver script `cron_script.sh`
-
-Invokes the two other driver scripts, `mirror_pds.sh` and `run-mhc-datasets.sh`. When the former is working, will replace the latter as the primary driver being run on the server.
-
-#### `process_xrf_files.py`
-
-Necessary for processing some static local datasets, but currently unused.
-
-### Driver script `mirror_pds.sh`
+## `mirror_pds.py`
 
 Downloads MSL files from the Planetary Data Science repository at WUSTL, then runs processing scripts on them.
 
-**TODO:** Find the missing some component files for `web_model.py` because the output of this processing is expected in DEVAS.
+Some previous code (removed by commit `213d47e` in this repo) ran additional predictive models on this data, but the scripts were missing some component files by the time we got this code, and we have no way to regenerate them.
 
-#### `kate_masks.py`
+Converted from shell script to Python on 4/19/2023.
 
-Used by `web_model.py`.
+**TODO:** This currently runs `lftp` using `os.system()`; `subprocess.Popen()` would be preferable, but we encountered implementation issues.
 
-#### `process_msl_files.py`
 
-The primary script to prepare data and metadata for DEVAS.
 
-#### `web_model.py`
+## `process_all.py`
 
-Processes the MSL data files to predict compositions and dust shots.
+This script checks for updates to several datasets collected from instruments at MHC as well as the MSL files from `mirror_pds.py`, and runs the appropriate processing script (below) based on the type of data specified in the config file.
+
+
+### Support files
+
+#### `processors/utils.py`
+
+Common utilities for the processor scripts below.
+
+#### `processors/_base.py`
+
+Provides base class for the individual processors. Additionally, provides two variants of this processor: VectorProcessor and TrajectoryProcessor.
+
+#### `processors/libs.py`
+
+This script processes all MHC LIBS data, namely ChemLIBS and both SuperLIBS.
+
+#### `processors/mossbauer.py`
+
+This script processes MHC Mossbauer data.
+
+#### `processors/msl.py`
+
+This script processes the MSL data downloaded by `mirror_pds.py`.
+
+**TODO:** Consolidate with LIBS?
+
+#### `processors/raman.py`
+
+This script processes MHC Raman data. Its base is a TrajectoryProcessor.

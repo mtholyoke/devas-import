@@ -1,0 +1,16 @@
+name: devas-import
+services:
+  appserver:
+    type: python:3.10
+    build:
+      - /app/.lando/build.sh
+tooling:
+  process:
+    service: appserver
+    cmd: /app/process_all.py
+  pycodestyle:
+    service: appserver
+    cmd: /var/www/.local/bin/pycodestyle
+  python:
+    service: appserver
+    cmd: /usr/local/bin/python

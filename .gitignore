@@ -1,6 +1,6 @@
 __pycache__
-*.pyc
+.DS_Store
 config.yml
 *.log
-.DS_Store
-*.out
+*.pyc
+*.xlsx
